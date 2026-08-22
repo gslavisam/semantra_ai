@@ -1,0 +1,144 @@
+"""Catalog and approved-reuse endpoints for Semantra integration knowledge."""
+
+from __future__ import annotations
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+
+from app.api.deps import require_admin
+from app.models.mapping import CatalogConceptDetail, CatalogFieldReuseShortlistRequest, CatalogFieldReuseShortlistResponse, CatalogIntegrationDetail, CatalogIntegrationRecord, CatalogReuseFitRequest, CatalogReuseFitResponse
+from app.models.mapping import (
+    CatalogIntegrationCompareRequest,
+    CatalogIntegrationCompareResponse,
+    CatalogWorkspaceReuseShortlistRequest,
+    CatalogWorkspaceReuseShortlistResponse,
+)
+from app.services.catalog_reuse_fit_service import build_catalog_reuse_fit
+from app.services.catalog_repository import catalog_repository
+from app.services.llm_service import build_provider_from_settings
+
+
+router = APIRouter(prefix="/catalog", tags=["catalog"])
+
+
+@router.get("/integrations", response_model=list[CatalogIntegrationRecord], dependencies=[Depends(require_admin)])
+async def list_catalog_integrations(
+    source_system: str | None = Query(None),
+    target_system: str | None = Query(None),
+    business_domain: str | None = Query(None),
+    owner: str | None = Query(None),
+    status: str | None = Query(None),
+    artifact_type: str | None = Query(None),
+    integration_name: str | None = Query(None),
+) -> list[CatalogIntegrationRecord]:
+    """List cataloged integrations using optional admin filters."""
+
+    return catalog_repository.list_integrations(
+        source_system=source_system,
+        target_system=target_system,
+        business_domain=business_domain,
+        owner=owner,
+        status=status,
+        artifact_type=artifact_type,
+        integration_name=integration_name,
+    )
+
+
+@router.get("/search", response_model=list[CatalogIntegrationRecord], dependencies=[Depends(require_admin)])
+async def search_catalog_integrations(
+    q: str = Query(""),
+    source_system: str | None = Query(None),
+    target_system: str | None = Query(None),
+    business_domain: str | None = Query(None),
+    owner: str | None = Query(None),
+    status: str | None = Query(None),
+    artifact_type: str | None = Query(None),
+) -> list[CatalogIntegrationRecord]:
+    """Search cataloged integrations by free text plus optional admin filters."""
+
+    return catalog_repository.search_integrations(
+        q,
+        source_system=source_system,
+        target_system=target_system,
+        business_domain=business_domain,
+        owner=owner,
+        status=status,
+        artifact_type=artifact_type,
+    )
+
+
+@router.get("/integrations/{integration_name}", response_model=CatalogIntegrationDetail, dependencies=[Depends(require_admin)])
+async def get_catalog_integration_detail(integration_name: str) -> CatalogIntegrationDetail:
+    """Return one catalog integration with its detailed reuse metadata."""
+
+    try:
+        return catalog_repository.get_integration_detail(integration_name)
+    except KeyError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+
+
+@router.get("/concepts/{concept_id}", response_model=CatalogConceptDetail, dependencies=[Depends(require_admin)])
+async def get_catalog_concept_detail(
+    concept_id: str,
+    source_system: str | None = Query(None),
+    target_system: str | None = Query(None),
+    status: str | None = Query(None),
+    artifact_type: str | None = Query(None),
+) -> CatalogConceptDetail:
+    """Return one catalog concept with filtered usage and integration detail."""
+
+    try:
+        return catalog_repository.get_concept_detail(
+            concept_id,
+            source_system=source_system,
+            target_system=target_system,
+            status=status,
+            artifact_type=artifact_type,
+        )
+    except KeyError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+
+
+@router.post("/reuse-fit", response_model=CatalogReuseFitResponse, dependencies=[Depends(require_admin)])
+async def explain_catalog_reuse_fit(request: CatalogReuseFitRequest) -> CatalogReuseFitResponse:
+    """Generate an admin-facing reuse-fit explanation for a proposed catalog match."""
+
+    provider = build_provider_from_settings()
+    return build_catalog_reuse_fit(request, provider=provider)
+
+
+@router.post("/compare-integrations", response_model=CatalogIntegrationCompareResponse, dependencies=[Depends(require_admin)])
+async def compare_catalog_integrations(request: CatalogIntegrationCompareRequest) -> CatalogIntegrationCompareResponse:
+    """Compare two catalog integrations and return deterministic overlap/delta signals."""
+
+    try:
+        return catalog_repository.compare_integrations(
+            request.base_integration_name,
+            request.peer_integration_name,
+        )
+    except KeyError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+
+
+@router.post("/reuse-shortlist", response_model=CatalogWorkspaceReuseShortlistResponse, dependencies=[Depends(require_admin)])
+async def catalog_workspace_reuse_shortlist(
+    request: CatalogWorkspaceReuseShortlistRequest,
+) -> CatalogWorkspaceReuseShortlistResponse:
+    """Return ranked approved catalog candidates for the current workspace context."""
+
+    return catalog_repository.workspace_reuse_shortlist(
+        workspace_context=request.workspace_context.model_dump(),
+        top_n=request.top_n,
+    )
+
+
+@router.post("/field-reuse-shortlist", response_model=CatalogFieldReuseShortlistResponse, dependencies=[Depends(require_admin)])
+async def catalog_workspace_field_reuse_shortlist(
+    request: CatalogFieldReuseShortlistRequest,
+) -> CatalogFieldReuseShortlistResponse:
+    """Return ranked approved catalog candidates for selected workspace source fields."""
+
+    return catalog_repository.workspace_field_reuse_shortlist(
+        workspace_context=request.workspace_context.model_dump(),
+        selected_fields=[item.model_dump() for item in request.selected_fields],
+        top_n=request.top_n,
+    )

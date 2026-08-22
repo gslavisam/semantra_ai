@@ -1,0 +1,8 @@
+{
+  "name": "Semantra",
+  "description": "A semantic integration workbench for source-to-target and source-to-canonical workflows with active review, LLM guidance, output generation, catalog reuse, and benchmarks.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

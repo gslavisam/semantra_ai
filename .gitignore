@@ -1,0 +1,46 @@
+﻿# Byte-compiled / optimized
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtualenv / env files
+.venv/
+venv/
+ENV/
+env/
+.env
+backend/.env
+
+# Pytest, caches, logs
+.pytest_cache/
+*.log
+*.sqlite
+*.db
+*.db-journal
+.coverage
+htmlcov/
+
+# IDEs / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Uploads / user files
+uploads/
+uploaded_files/
+
+# Jupyter
+.ipynb_checkpoints
+
+# Packaging
+build/
+dist/
+*.egg-info/
+*.whl
+
+# Others
+.mypy_cache/
+.Python
+metadata_dictionary.xlsx
+semantra_data_mapp_02.pptx

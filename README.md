@@ -1,11 +1,263 @@
-<div align="center">
+# Semantra
 
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+Semantra is a pilot-ready semantic integration workbench for analyst-guided schema mapping, review, governance, and reuse.
 
-  <h1>Built with AI Studio</h2>
+It combines deterministic profiling and ranking with bounded AI assistance so a team can:
 
-  <p>The fastest path from prompt to production with Gemini.</p>
+- upload source and target structures from row data, schema specs, or SQL snapshots
+- generate explainable source-to-target or source-to-canonical mapping proposals
+- review explicit source -> concept -> target paths and canonical coverage
+- generate technical mapping analysis summaries and optional narration/audio
+- author structured Transformation Design specs, preview output, and generate starter Pandas, PySpark, or dbt artifacts
+- refine generated artifacts through controlled LLM prompts with accept/discard workflow
+- persist governed mapping sets, benchmark datasets, transformation test sets, and correction history
+- manage canonical concepts, overlays, and stewardship workflows through a dedicated Canonical Console
+- search, inspect, and reuse approved integration knowledge through the Catalog
+- measure quality through benchmark runs, profile comparison, correction impact, and explanation surfaces
 
-  <a href="https://aistudio.google.com/apps">Start building</a>
+The current product shape is a FastAPI backend plus a Streamlit product UI. It is already useful for demos, pilot workflows, and controlled analyst/governance review. It is not yet a production ETL runtime, scheduler, or connector-heavy integration platform.
 
-</div>
+A complementary package lives in `semantra_agent/`: it exposes the core mapping, knowledge, and bounded LLM runtime as a reusable Python SDK with backend adapters and agent integration helpers for LangChain and LangGraph. That package is documented separately in `semantra_agent/README.md` and is intended as a programmatic integration surface rather than a replacement for the Streamlit analyst UI.
+
+## Current Product Surface
+
+Top-level UI areas:
+
+- `Workspace`
+	- upload, profile, map, review, decide, preview, codegen, artifact refinement, and the main `Workspace Copilot` panel
+- `Governance`
+	- `Canonical Console`, canonical concept registry, overlay lifecycle, canonical-gap stewardship, and stable glossary promotion
+- `Catalog`
+	- searchable integration inventory, concept-centric reuse views, and workspace-fit explanation for approved reuse candidates
+- `Benchmarks`
+	- benchmark dataset save/run flows, scoring-profile comparison, correction impact, run history, and bounded explanation
+- `System`
+	- runtime config, observability, sidebar support surfaces, and operational reset/runtime checks
+
+Core implemented capabilities:
+
+- CSV, JSON, XML, XLSX, SQL snapshot, and schema-spec ingestion
+- source-side and target-side companion metadata enrichment over uploaded dataset handles
+- standard source-to-target mapping and canonical-only source-to-concept mapping
+- explainable multi-signal ranking with optional closed-set LLM validation
+- configurable canonical candidate pool shortlisting before full canonical scoring
+- Mapping Analysis Overview with optional narration/audio generation
+- Review Queue Plan and Gap Queue Summary for queue-level review guidance
+- opportunistic LLM decision proposals for `needs_review` rows with optional live LLM fill
+- proposal apply workflows (`Apply selected` and `Apply safe`) with stale-state protection
+- local decision-origin audit trail (`manual_mapping`, `llm_proposal`) surfaced in Active Decisions
+- mapping decision audit persistence through decision JSON export/import
+- per-row and batch LLM mapping refinement with transient field context and accept/revert controls
+- structured Transformation Design authoring with reusable target-grain, global rule, defaults, examples, and field-rule inputs
+- JSON-based import/apply of a structured transformation spec into the Transformation Design form
+- transformation generation, templates, advisory preview, and Pandas/PySpark/dbt starter generation
+- canonical-mode manual mapping and canonical-mode code generation against virtual canonical targets
+- LLM-based artifact refinement with split-view compare and accept/discard actions
+- governed mapping-set persistence with status, audit, diff, and approved-only reuse
+- correction persistence and reusable correction-rule promotion
+- canonical glossary import/export, knowledge overlays, stewardship items, and Canonical Console workflows
+- integration catalog search/detail/reuse flows with workspace reuse-fit assessment
+- benchmark datasets, evaluation runs, scoring-profile comparison, correction impact, and benchmark explanation
+- compact sidebar operations strip and unified status legend for cross-surface orientation
+- dismissible onboarding hints per top-level area (`Workspace`, `Governance`, `Catalog`, `Benchmarks`, `System`)
+- main-panel `Workspace Copilot` closure/readiness/output guidance in `Review`, `Decisions`, and `Output`, mirrored with the sidebar `WS Copilot`
+- rerun-safe `Workspace Copilot` section handoffs that now queue pending navigation instead of mutating widget-bound active navigation state mid-render
+
+For the full grounded feature inventory, see `project_docs/current_state.md`.
+
+## Guided AI Surfaces
+
+Semantra does not use LLMs as an autonomous mapper. The current bounded AI surfaces are:
+
+- closed-set mapping validation inside the ambiguity band
+- Mapping Analysis Overview, narration, and audio generation
+- transformation code generation
+- artifact refinement in `Workspace > Output`
+- review queue planning in `Workspace > Review`
+- `Workspace Copilot` review-closure, decision-readiness, and output-gating guidance in the main panel and sidebar
+- canonical-gap suggestion and queue summary
+- benchmark explanation
+- catalog workspace reuse-fit explanation
+
+Each of these surfaces is optional, inspectable, and backed by deterministic fallback behavior where applicable.
+
+They now share one bounded prompt contract across the backend: static prompt text lives in `backend/app/services/prompt_templates.py`, runtime requests are split into explicit `SYSTEM`, `TASK`, and labeled payload sections, and planner-style prompts use neutral `baseline_*` payload hints instead of `fallback_*` prompt anchoring.
+
+For mapping specifically, the LLM path is now split into two bounded steps: the validator chooses only the best target inside the closed candidate set, and transformation generation runs as a separate follow-up call only after a target has been selected.
+
+## Quick Start
+
+### 1. Install dependencies
+
+Use a Python environment and install the project requirements from the repo root.
+
+```bash
+pip install -r requirements.txt
+```
+
+### 2. Configure optional runtime settings
+
+If needed, create `backend/.env` and set values such as:
+
+- `SEMANTRA_ADMIN_API_TOKEN`
+- `SEMANTRA_LLM_PROVIDER`
+- `SEMANTRA_LLM_MODEL`
+- `SEMANTRA_LMSTUDIO_BASE_URL`
+- `SEMANTRA_OPENAI_API_KEY`
+- `SEMANTRA_GEMINI_API_KEY`
+- `SEMANTRA_DBT_MATERIALIZATION`
+- `SEMANTRA_DBT_SOURCE_MODE`
+- `SEMANTRA_DBT_SOURCE_NAME`
+- `SEMANTRA_DBT_SOURCE_TABLE_NAME`
+- `SEMANTRA_DBT_REF_NAME`
+- `SEMANTRA_DBT_QUOTE_IDENTIFIERS`
+- `SEMANTRA_DBT_SOURCE_CTE_NAME`
+
+Example `backend/.env` snippet for dbt starter conventions:
+
+```env
+SEMANTRA_DBT_MATERIALIZATION=table
+SEMANTRA_DBT_SOURCE_MODE=source
+SEMANTRA_DBT_SOURCE_NAME=sap_raw
+SEMANTRA_DBT_SOURCE_TABLE_NAME=customer_extract
+SEMANTRA_DBT_REF_NAME=stg_customer
+SEMANTRA_DBT_QUOTE_IDENTIFIERS=false
+SEMANTRA_DBT_SOURCE_CTE_NAME=stage_input
+```
+
+Use `SEMANTRA_DBT_SOURCE_MODE=ref` when the generated model should read from `{{ ref(...) }}` instead of `{{ source(...) }}`.
+
+### 3. Start the app
+
+Windows-friendly launcher:
+
+```powershell
+./start_semantra.ps1
+```
+
+This starts:
+
+- API at `http://127.0.0.1:8000`
+- Streamlit UI at `http://127.0.0.1:8501`
+
+Manual start is also possible:
+
+```bash
+python -m uvicorn app.main:app --reload --app-dir backend --reload-dir backend
+python -m streamlit run streamlit_app.py
+```
+
+## Runtime Notes
+
+### Admin token
+
+If you want protected governance/admin flows enabled, set `SEMANTRA_ADMIN_API_TOKEN` in `backend/.env`, then restart the backend or call `POST /observability/config/reload` with the token in `X-Admin-Token`.
+
+### LLM providers
+
+The app supports bounded LLM use for validation, review guidance, transformation generation, artifact refinement, benchmark explanation, canonical-gap assistance, and reuse-fit assessment.
+
+Prompt authoring is intentionally code-backed rather than environment-configured. Runtime config still controls provider, model, and timeout behavior, while static prompt wording is centralized in `backend/app/services/prompt_templates.py`.
+
+For a full prompt inventory showing each static template, dynamic payload builder, and response contract, see `docs/reference/LLM_PROMPT_MATRIX.md`.
+
+For the checklist used to evaluate future prompt revisions, see `docs/reference/LLM_PROMPT_EVALUATION_CHECKLIST.md`.
+
+Example for LM Studio:
+
+- `SEMANTRA_LLM_PROVIDER=lmstudio`
+- `SEMANTRA_LLM_MODEL=<model-identifier>` or `SEMANTRA_LLM_MODEL=auto`
+- `SEMANTRA_LMSTUDIO_BASE_URL=http://127.0.0.1:1234/v1/chat/completions`
+
+### Scoring note
+
+The mapping confidence score is a normalized multi-signal heuristic, not a calibrated probability.
+
+- the final score is normalized into `0..1`
+- current thresholds are `high >= 0.85`, `medium >= 0.65`, otherwise `low`
+- current auto-accept threshold is `>= 0.75`, separate from the confidence-label buckets
+- treat the score as review prioritization, not as a guarantee that a mapping is correct
+- the active score profile is configurable via `SEMANTRA_SCORING_PROFILE` (`balanced`, `schema_only`, `data_rich`, `canonical_first`)
+- the active profile can be fine-tuned with `SEMANTRA_SCORING_WEIGHT_OVERRIDES` as a JSON object in `backend/.env`
+- compare built-in scoring profiles locally with `backend/scripts/run_scoring_profile_benchmark.py`
+
+For the detailed reference on signals, weights, confidence labels, and bounded LLM validation cases, see `docs/reference/MAPPING_SIGNALS_AND_SCORING.md`.
+
+For the detailed reference on benchmark metrics, confidence buckets, and correction-impact interpretation, see `docs/reference/BENCHMARK_METRICS_AND_CORRECTION_IMPACT.md`.
+
+## Product Boundaries
+
+Semantra today is:
+
+- a pilot-grade semantic mapping and governance workbench
+- deterministic-first, with bounded AI assistance
+- centered on reviewability, explainability, and reusable semantic knowledge
+
+Semantra today is not yet:
+
+- a production batch orchestration platform
+- a connector-heavy ingestion platform
+- a multi-step enterprise workflow engine
+- a DB-only canonical authoring platform without file-backed reseed inputs
+- a durable multi-user job runtime with persistent queue semantics
+
+## Session Continuity Today
+
+Semantra currently treats browser session state as local UI state.
+
+- if the browser is closed, transient Workspace state is not automatically restored on the next day
+- continuing work is supported through explicit persisted artifacts: saved draft sessions, saved mapping-set versions, and exported mapping JSON/Excel
+- current draft-session continuity is intentionally minimal: save, list, load, and bounded restore for the active review/decision contract
+- draft-session restore now also revives bounded output snapshots for preview, generated/refined artifacts, and mapping-analysis summary/script when they were explicitly saved with the draft
+
+## Authorization Posture Today
+
+Semantra does not yet have enterprise-wide RBAC across the full product.
+
+- most protected governance and admin surfaces still use the existing `X-Admin-Token` model
+- a minimal principal plus role bootstrap now exists in the backend for the first pilot RBAC slice
+- that pilot slice currently covers only `mapping/draft-sessions*` and `mapping/sets*`
+- when no admin token is configured, the backend still allows a development-friendly fallback principal; that is useful for local work, not a production security posture
+
+For the detailed role and endpoint breakdown, see `docs/reference/RBAC_ACTION_AND_ENDPOINT_MATRIX.md`.
+
+## Documentation Map
+
+Read the docs in this order:
+
+1. `project_docs/current_state.md`
+	 - what the product actually supports today
+2. `PROJECT_OVERVIEW.md`
+	 - broader product, architecture, and governance explanation
+3. `project_docs/completed_slices.md`
+	 - chronological delivery history
+4. `project_docs/plan.md`
+	 - forward-looking priorities and sequencing
+5. `project_docs/epics.md`
+	 - backlog map and epic status
+6. `project_docs/implementation_checklists.md`
+	 - active execution checklists
+7. `help.md` / `help.en.md`
+	 - practical UI usage guides
+
+Supporting docs:
+
+- `docs/pilot/REAL_LIFE_PILOT_TEST_PLAN.md`
+- `docs/vision/INTEGRATION_CATALOG_VISION.md`
+- `docs/reference/BENCHMARK_METRICS_AND_CORRECTION_IMPACT.md`
+- `docs/reference/CANONICAL_CONSOLE_AND_STEWARDSHIP.md`
+- `docs/reference/CATALOG_SEARCH_REUSE_AND_SIMILARITY.md`
+- `docs/reference/LLM_PROMPT_MATRIX.md`
+- `docs/reference/MAPPING_SIGNALS_AND_SCORING.md`
+- `docs/reference/TRANSFORMATION_TEST_SETS_AND_ASSERTIONS.md`
+- `docs/reference/TRANSFORMATION_PREVIEW_AND_CODEGEN_WARNINGS.md`
+- `docs/presentation/presentation.md`
+
+## Immediate Next Steps
+
+The next project focus is not more feature sprawl. It is validation and product proof:
+
+1. keep the documentation fully aligned with the real current state of the product so pilot users, reviewers, and stakeholders all see the same truthful picture
+2. run more manual pilot flows and proof-of-concept checks that show where the product actually saves time, improves review quality, or increases reuse
+3. turn those runs into organization-facing evidence through presentations, live demos, screenshots, and repeatable runbooks
+4. only after that validation gate, decide which enterprise-wide hardening investments are justified next: broader RBAC, deeper persistence, longer-running job runtime, and wider productization
