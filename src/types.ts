@@ -2,6 +2,17 @@ export type MappingMode = 'standard' | 'canonical';
 
 export type Confidence = 'high' | 'medium' | 'low';
 
+export type SearchMode = 'hybrid' | 'lexical' | 'semantic';
+
+export interface RRFBreakdown {
+  rrfScore: number;
+  lexicalRank: number;
+  semanticRank: number;
+  lexicalContrib: number;
+  semanticContrib: number;
+  k: number;
+}
+
 export type MappingSignal = 'name' | 'semantic' | 'knowledge' | 'canonical' | 'correction' | 'llm';
 
 export type DecisionStatus = 'accepted' | 'needs_review' | 'rejected';
@@ -157,5 +168,152 @@ export interface OpenAPIEndpoint {
   parameters?: { name: string; type: string; required: boolean; description: string }[];
   requestBodySample?: object;
   responseSample: object;
+}
+
+// Phase 2: AI Security & Circuit Breaker Types
+export type PIIType = 'email' | 'phone' | 'tax_id' | 'iban' | 'national_id' | 'credit_card' | 'name' | 'address' | 'custom';
+
+export interface PIIEntity {
+  id: string;
+  type: PIIType;
+  rawValue: string;
+  maskedToken: string;
+  location: string;
+  confidence: number;
+}
+
+export interface PIIMaskingResult {
+  sanitizedPayload: any;
+  detectedEntities: PIIEntity[];
+  count: number;
+  isSanitized: boolean;
+  mappingDict: Record<string, string>;
+}
+
+export type CircuitBreakerState = 'CLOSED' | 'OPEN' | 'HALF_OPEN';
+
+export interface CircuitBreakerMetrics {
+  state: CircuitBreakerState;
+  failureCount: number;
+  successCount: number;
+  consecutiveFailures: number;
+  lastFailureTime?: string;
+  lastSuccessTime?: string;
+  fallbackActive: boolean;
+  lastFallbackReason?: string;
+  totalCalls: number;
+  failedCalls: number;
+  fallbackCalls: number;
+  uptimePercent: number;
+}
+
+export interface AIExecutionResult<T> {
+  data?: T;
+  fallbackUsed: boolean;
+  fallbackReason?: string;
+  circuitBreakerState: CircuitBreakerState;
+  piiSanitized: boolean;
+  piiEntitiesCount: number;
+  latencyMs: number;
+}
+
+// ==========================================
+// ADVANCED BRANCHING & MERGE CONFLICT TYPES
+// ==========================================
+export interface BranchOverlayRule {
+  id: string;
+  source_system: string;
+  source_field: string;
+  target_canonical_concept: string;
+  override_type: 'alias_promotion' | 'domain_override' | 'pii_tag' | 'type_mapping';
+  steward: string;
+  status: 'active' | 'inactive';
+  created_at: string;
+  notes: string;
+}
+
+export interface BranchDefinition {
+  id: string;
+  name: string;
+  description: string;
+  author: string;
+  status: 'production' | 'draft_overlay' | 'staging';
+  baseBranch: string;
+  pendingChangesCount: number;
+  benchmarkDeltaPct: number;
+  lastUpdated: string;
+  commitHash: string;
+  stagedRules: BranchOverlayRule[];
+  conceptOverrides: Record<string, Partial<CanonicalConcept>>;
+}
+
+export interface MergeConflictItem {
+  id: string;
+  conceptId: string;
+  conceptDisplayName: string;
+  propertyKey: keyof CanonicalConcept | 'overlay_rule';
+  propertyLabel: string;
+  mainValue: any;
+  incomingValue: any;
+  conflictDescription: string;
+  resolution: 'keep_main' | 'accept_incoming' | 'custom';
+  customValue?: any;
+  resolved: boolean;
+}
+
+export interface StewardshipAuditRecord {
+  id: string;
+  timestamp: string;
+  stewardName: string;
+  actionType: 'branch_created' | 'branch_merged' | 'conflict_resolved' | 'concept_override' | 'overlay_promoted' | 'decision_applied';
+  branchName: string;
+  targetEntity: string;
+  details: string;
+  idempotencyKey: string;
+  commitHash: string;
+  status: 'committed' | 'rolled_back';
+}
+
+// ==========================================
+// ENHANCED REVERSE ENGINEERING CONTRACT TYPES
+// ==========================================
+export interface ContractRelationship {
+  id: string;
+  fromEntity: string;
+  fromField: string;
+  toEntity: string;
+  toField: string;
+  cardinality: '1:1' | '1:N' | 'N:M';
+  constraintName?: string;
+}
+
+export interface ContractConstraint {
+  id: string;
+  fieldName: string;
+  constraintType: 'NOT NULL' | 'UNIQUE' | 'PRIMARY KEY' | 'CHECK' | 'FOREIGN KEY' | 'REGEX' | 'ENUM';
+  expression: string;
+  severity: 'error' | 'warning';
+  assertionCandidate: boolean;
+  generatedAssertionRule?: string;
+}
+
+export interface ContractParsedEntity {
+  name: string;
+  displayName: string;
+  description?: string;
+  fields: {
+    name: string;
+    type: string;
+    nullable: boolean;
+    isPrimaryKey: boolean;
+    isForeignKey: boolean;
+    defaultValue?: string;
+    sampleValues?: string[];
+    description?: string;
+    semanticCategory?: string;
+  }[];
+  constraints: ContractConstraint[];
+  relationships: ContractRelationship[];
+  rawCount?: number;
 }
 

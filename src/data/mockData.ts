@@ -25,7 +25,9 @@ export const SAP_CUSTOMER_SALES_AREA_MAPPINGS: MappingRow[] = [
     signals: ['name', 'semantic', 'canonical'],
     explanation: 'Highly matched on semantic description "customer number" and canonical concept link for customer master entities.',
     llmNotes: 'Matches standard sold-to party canonical patterns.',
-    transformationCode: 'def transform(row):\n    return str(row["KUNNR"]).strip().zfill(10)'
+    transformationCode: 'def transform(row):\n    return str(row["KUNNR"]).strip().zfill(10)',
+    decisionStatus: 'accepted',
+    isApproved: true
   },
   {
     id: 'c2',
@@ -39,7 +41,9 @@ export const SAP_CUSTOMER_SALES_AREA_MAPPINGS: MappingRow[] = [
     score: 0.89,
     signals: ['name', 'semantic'],
     explanation: 'Name overlap with target "customer_name" and semantic description alignment on "Customer name".',
-    transformationCode: 'def transform(row):\n    return str(row["NAME1"]).upper()'
+    transformationCode: 'def transform(row):\n    return str(row["NAME1"]).upper()',
+    decisionStatus: 'accepted',
+    isApproved: true
   },
   {
     id: 'c3',
@@ -53,8 +57,10 @@ export const SAP_CUSTOMER_SALES_AREA_MAPPINGS: MappingRow[] = [
     score: 0.78,
     signals: ['semantic', 'knowledge'],
     explanation: 'Matched on standard SAP technical concept (VKORG -> Sales Org) from Semantra ERP Knowledge Base.',
-    llmNotes: 'Auto-accepted under threshold (>=0.75) with medium confidence.',
-    transformationCode: 'def transform(row):\n    return str(row["VKORG"]).strip()'
+    llmNotes: 'Requires manual verification under threshold (<0.85) with medium confidence.',
+    transformationCode: 'def transform(row):\n    return str(row["VKORG"]).strip()',
+    decisionStatus: 'needs_review',
+    isApproved: false
   },
   {
     id: 'c4',
@@ -68,7 +74,9 @@ export const SAP_CUSTOMER_SALES_AREA_MAPPINGS: MappingRow[] = [
     score: 0.76,
     signals: ['semantic', 'knowledge'],
     explanation: 'Matched via SAP metadata dictionary overlay for distribution channel VTWEG.',
-    transformationCode: 'def transform(row):\n    return str(row["VTWEG"]).strip()'
+    transformationCode: 'def transform(row):\n    return str(row["VTWEG"]).strip()',
+    decisionStatus: 'needs_review',
+    isApproved: false
   },
   {
     id: 'c5',
@@ -82,7 +90,9 @@ export const SAP_CUSTOMER_SALES_AREA_MAPPINGS: MappingRow[] = [
     score: 0.72,
     signals: ['semantic', 'knowledge'],
     explanation: 'Linked using SAP concept SPART (Division code).',
-    transformationCode: 'def transform(row):\n    return str(row["SPART"]).strip()'
+    transformationCode: 'def transform(row):\n    return str(row["SPART"]).strip()',
+    decisionStatus: 'needs_review',
+    isApproved: false
   },
   {
     id: 'c6',
@@ -96,7 +106,9 @@ export const SAP_CUSTOMER_SALES_AREA_MAPPINGS: MappingRow[] = [
     score: 0.81,
     signals: ['name', 'semantic'],
     explanation: 'Aligned with customer_group_id based on abbreviation KDGRP matching customer segmentation rule.',
-    transformationCode: 'def transform(row):\n    return str(row["KDGRP"]).zfill(2)'
+    transformationCode: 'def transform(row):\n    return str(row["KDGRP"]).zfill(2)',
+    decisionStatus: 'needs_review',
+    isApproved: false
   },
   {
     id: 'c7',
@@ -110,7 +122,9 @@ export const SAP_CUSTOMER_SALES_AREA_MAPPINGS: MappingRow[] = [
     score: 0.79,
     signals: ['semantic', 'knowledge'],
     explanation: 'Technical metadata lookup matches BZIRK to Sales District.',
-    transformationCode: 'def transform(row):\n    return str(row["BZIRK"]).strip()'
+    transformationCode: 'def transform(row):\n    return str(row["BZIRK"]).strip()',
+    decisionStatus: 'needs_review',
+    isApproved: false
   },
   {
     id: 'c8',
@@ -124,7 +138,9 @@ export const SAP_CUSTOMER_SALES_AREA_MAPPINGS: MappingRow[] = [
     score: 0.91,
     signals: ['name', 'semantic'],
     explanation: 'Almost perfect string match on description and close alias matching.',
-    transformationCode: 'def transform(row):\n    return str(row["VSBED"]).strip()'
+    transformationCode: 'def transform(row):\n    return str(row["VSBED"]).strip()',
+    decisionStatus: 'accepted',
+    isApproved: true
   },
   {
     id: 'c9',
@@ -138,7 +154,9 @@ export const SAP_CUSTOMER_SALES_AREA_MAPPINGS: MappingRow[] = [
     score: 0.95,
     signals: ['name', 'semantic', 'correction'],
     explanation: 'Correction rule maps INCO1 directly to incoterm_code.',
-    transformationCode: 'def transform(row):\n    return str(row["INCO1"]).upper()'
+    transformationCode: 'def transform(row):\n    return str(row["INCO1"]).upper()',
+    decisionStatus: 'accepted',
+    isApproved: true
   },
   {
     id: 'c10',
@@ -152,7 +170,9 @@ export const SAP_CUSTOMER_SALES_AREA_MAPPINGS: MappingRow[] = [
     score: 0.93,
     signals: ['name', 'semantic'],
     explanation: 'Direct text matching on Incoterms location.',
-    transformationCode: 'def transform(row):\n    return str(row["INCO2"]).strip()'
+    transformationCode: 'def transform(row):\n    return str(row["INCO2"]).strip()',
+    decisionStatus: 'accepted',
+    isApproved: true
   },
   {
     id: 'c11',
@@ -166,7 +186,9 @@ export const SAP_CUSTOMER_SALES_AREA_MAPPINGS: MappingRow[] = [
     score: 0.88,
     signals: ['name', 'semantic', 'knowledge'],
     explanation: 'Technical field WAERS maps globally to document_currency_code in Semantra ERP Glossary.',
-    transformationCode: 'def transform(row):\n    return str(row["WAERS"]).upper()'
+    transformationCode: 'def transform(row):\n    return str(row["WAERS"]).upper()',
+    decisionStatus: 'accepted',
+    isApproved: true
   },
   {
     id: 'c12',
@@ -180,7 +202,9 @@ export const SAP_CUSTOMER_SALES_AREA_MAPPINGS: MappingRow[] = [
     score: 0.86,
     signals: ['semantic', 'knowledge'],
     explanation: 'ZTERM payment key recognized under Payment Terms.',
-    transformationCode: 'def transform(row):\n    return str(row["ZTERM"]).strip()'
+    transformationCode: 'def transform(row):\n    return str(row["ZTERM"]).strip()',
+    decisionStatus: 'accepted',
+    isApproved: true
   },
   {
     id: 'c13',
@@ -194,7 +218,9 @@ export const SAP_CUSTOMER_SALES_AREA_MAPPINGS: MappingRow[] = [
     score: 0.98,
     signals: ['name', 'semantic'],
     explanation: 'Perfect name matching for customer pricing procedure code.',
-    transformationCode: 'def transform(row):\n    return str(row["KALKS"]).strip()'
+    transformationCode: 'def transform(row):\n    return str(row["KALKS"]).strip()',
+    decisionStatus: 'accepted',
+    isApproved: true
   },
   {
     id: 'c14',
@@ -208,7 +234,9 @@ export const SAP_CUSTOMER_SALES_AREA_MAPPINGS: MappingRow[] = [
     score: 0.74,
     signals: ['semantic'],
     explanation: 'Sub-threshold match on price list mapping. Requires manual verification.',
-    transformationCode: 'def transform(row):\n    return str(row["PLTYP"]).strip()'
+    transformationCode: 'def transform(row):\n    return str(row["PLTYP"]).strip()',
+    decisionStatus: 'needs_review',
+    isApproved: false
   }
 ];
 
@@ -225,7 +253,9 @@ export const SAP_MATERIAL_MASTER_MAPPINGS: MappingRow[] = [
     score: 0.95,
     signals: ['name', 'semantic', 'canonical'],
     explanation: 'Technical standard MATNR maps to material_id.',
-    transformationCode: 'def transform(row):\n    return str(row["MATNR"]).strip().lstrip("0")'
+    transformationCode: 'def transform(row):\n    return str(row["MATNR"]).strip().lstrip("0")',
+    decisionStatus: 'accepted',
+    isApproved: true
   },
   {
     id: 'm2',
@@ -239,7 +269,9 @@ export const SAP_MATERIAL_MASTER_MAPPINGS: MappingRow[] = [
     score: 0.92,
     signals: ['name', 'semantic'],
     explanation: 'MAKTX maps to description standard.',
-    transformationCode: 'def transform(row):\n    return str(row["MAKTX"]).strip()'
+    transformationCode: 'def transform(row):\n    return str(row["MAKTX"]).strip()',
+    decisionStatus: 'accepted',
+    isApproved: true
   },
   {
     id: 'm3',
@@ -253,7 +285,9 @@ export const SAP_MATERIAL_MASTER_MAPPINGS: MappingRow[] = [
     score: 0.89,
     signals: ['semantic', 'knowledge'],
     explanation: 'MEINS standard maps to base unit of measure.',
-    transformationCode: 'def transform(row):\n    return str(row["MEINS"]).upper()'
+    transformationCode: 'def transform(row):\n    return str(row["MEINS"]).upper()',
+    decisionStatus: 'accepted',
+    isApproved: true
   },
   {
     id: 'm4',
@@ -267,7 +301,9 @@ export const SAP_MATERIAL_MASTER_MAPPINGS: MappingRow[] = [
     score: 0.79,
     signals: ['name', 'semantic'],
     explanation: 'Material group (MATKL) correlates to product categories.',
-    transformationCode: 'def transform(row):\n    return str(row["MATKL"]).strip()'
+    transformationCode: 'def transform(row):\n    return str(row["MATKL"]).strip()',
+    decisionStatus: 'needs_review',
+    isApproved: false
   }
 ];
 
@@ -284,7 +320,9 @@ export const SAP_SUPPLIER_MASTER_MAPPINGS: MappingRow[] = [
     score: 0.94,
     signals: ['name', 'semantic', 'knowledge'],
     explanation: 'LIFNR is globally known as vendor ID in standard SAP ERP overlays.',
-    transformationCode: 'def transform(row):\n    return str(row["LIFNR"]).strip().zfill(10)'
+    transformationCode: 'def transform(row):\n    return str(row["LIFNR"]).strip().zfill(10)',
+    decisionStatus: 'accepted',
+    isApproved: true
   },
   {
     id: 's2',
@@ -298,7 +336,9 @@ export const SAP_SUPPLIER_MASTER_MAPPINGS: MappingRow[] = [
     score: 0.91,
     signals: ['name', 'semantic'],
     explanation: 'Direct lookup of name match on general master.',
-    transformationCode: 'def transform(row):\n    return str(row["NAME1"]).strip()'
+    transformationCode: 'def transform(row):\n    return str(row["NAME1"]).strip()',
+    decisionStatus: 'accepted',
+    isApproved: true
   },
   {
     id: 's3',
@@ -312,7 +352,9 @@ export const SAP_SUPPLIER_MASTER_MAPPINGS: MappingRow[] = [
     score: 0.83,
     signals: ['semantic', 'knowledge'],
     explanation: 'LAND1 corresponds to country key metadata mapping.',
-    transformationCode: 'def transform(row):\n    return str(row["LAND1"]).upper()'
+    transformationCode: 'def transform(row):\n    return str(row["LAND1"]).upper()',
+    decisionStatus: 'needs_review',
+    isApproved: false
   }
 ];
 
@@ -332,7 +374,9 @@ export const GENERIC_ACCOUNT_MASTER_MAPPINGS: MappingRow[] = [
     llmNotes: 'Companion spec enriched account ID semantics. Prefix rule applied ("C-" + id).',
     transformationCode: 'def transform(row):\n    return "C-" + str(row["col_1"]).strip()',
     transformation: 'Prefix "C-" addition to Account ID',
-    conceptName: 'Customer_Identifier'
+    conceptName: 'Customer_Identifier',
+    decisionStatus: 'accepted',
+    isApproved: true
   },
   {
     id: 'g2',
@@ -349,7 +393,9 @@ export const GENERIC_ACCOUNT_MASTER_MAPPINGS: MappingRow[] = [
     llmNotes: 'Whitespace trimmed and string standardized.',
     transformationCode: 'def transform(row):\n    return str(row["col_2"]).strip()',
     transformation: 'String Clean & Trim',
-    conceptName: 'Customer_Name'
+    conceptName: 'Customer_Name',
+    decisionStatus: 'accepted',
+    isApproved: true
   },
   {
     id: 'g3',
@@ -366,7 +412,9 @@ export const GENERIC_ACCOUNT_MASTER_MAPPINGS: MappingRow[] = [
     llmNotes: 'Converted to uppercase ISO format.',
     transformationCode: 'def transform(row):\n    return str(row["col_3"]).strip().upper()',
     transformation: 'Uppercase ISO Country Code',
-    conceptName: 'Country_Code'
+    conceptName: 'Country_Code',
+    decisionStatus: 'accepted',
+    isApproved: true
   },
   {
     id: 'g4',
@@ -383,7 +431,9 @@ export const GENERIC_ACCOUNT_MASTER_MAPPINGS: MappingRow[] = [
     llmNotes: 'Resolved cross-column domain shift (col_5 -> col_4) via AI Spec Analysis companion prompt.',
     transformationCode: 'def transform(row):\n    val = float(row["col_5"] or 0)\n    if val >= 200000: return "Enterprise"\n    if val >= 100000: return "Premium"\n    if val >= 75000: return "Midmarket"\n    return "Standard"',
     transformation: '3-Category Revenue Tiering Rule',
-    conceptName: 'Customer_Service_Level_Tier'
+    conceptName: 'Customer_Service_Level_Tier',
+    decisionStatus: 'accepted',
+    isApproved: true
   },
   {
     id: 'g5',
@@ -400,7 +450,9 @@ export const GENERIC_ACCOUNT_MASTER_MAPPINGS: MappingRow[] = [
     llmNotes: 'Resolved cross-column swap (col_4 -> col_5) using companion metadata context.',
     transformationCode: 'def transform(row):\n    return str(row["col_4"]).strip()',
     transformation: 'Standardize ISO Date Cast',
-    conceptName: 'Activation_Date'
+    conceptName: 'Activation_Date',
+    decisionStatus: 'accepted',
+    isApproved: true
   }
 ];
 

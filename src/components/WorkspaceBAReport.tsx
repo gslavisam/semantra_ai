@@ -885,6 +885,19 @@ ${mappings.map(m => {
                     <div className="space-y-1.5 text-slate-600 text-[11px] pt-1 border-t border-slate-200">
                       <p><strong className="text-slate-800">Canonical path:</strong> {ev.canonicalPath}</p>
                       <p><strong className="text-slate-800">Signal breakdown:</strong> {ev.signalBreakdown}</p>
+                      
+                      {/* RRF Hybrid Search Diagnostic Evidence Box */}
+                      {(() => {
+                        const rrfBullet = ev.reasoningBullets?.find(b => b.startsWith('Hybrid RRF Fusion:'));
+                        if (!rrfBullet) return null;
+                        return (
+                          <div className="bg-emerald-950/40 p-2 rounded border border-emerald-800/40 text-[11px] text-emerald-300 flex items-start gap-1.5 font-mono">
+                            <span className="text-emerald-400 font-bold shrink-0">⚡</span>
+                            <span>{rrfBullet}</span>
+                          </div>
+                        );
+                      })()}
+
                       {m.transformation && (
                         <p className="flex items-center gap-1.5">
                           <strong className="text-slate-800">Transformation:</strong>
@@ -893,9 +906,14 @@ ${mappings.map(m => {
                           </code>
                         </p>
                       )}
-                      <p className="text-slate-700 bg-white p-2 rounded border border-slate-200 leading-relaxed">
-                        {ev.reviewText}
-                      </p>
+                      <div className="text-slate-700 bg-white p-2.5 rounded border border-slate-200 leading-relaxed space-y-1.5">
+                        <div className="font-semibold text-slate-900 text-[11px]">Detailed Semantic Reasoning:</div>
+                        <ul className="list-disc list-inside space-y-1 text-[11px] text-slate-600 pl-0.5">
+                          {ev.reasoningBullets?.filter(b => !b.startsWith('Hybrid RRF Fusion:')).map((b, bIdx) => (
+                            <li key={bIdx} className="text-slate-700 leading-relaxed">{b}</li>
+                          ))}
+                        </ul>
+                      </div>
                     </div>
                   )}
                 </div>

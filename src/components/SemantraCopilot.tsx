@@ -546,7 +546,12 @@ Your query seems outside our core data workbench features, or requires further d
                 <Bot className="w-3.5 h-3.5" />
               </div>
               <div>
-                <h3 className="text-xs font-bold text-white leading-none">Semantra Copilot</h3>
+                <h3 className="text-xs font-bold text-white leading-none flex items-center gap-1.5">
+                  Semantra Copilot
+                  <span className="text-[9px] bg-emerald-950 text-emerald-300 border border-emerald-700/50 px-1.5 py-0.2 rounded font-sans font-medium">
+                    🛡️ PII Safe
+                  </span>
+                </h3>
                 <span className="text-[9px] text-slate-400 font-sans flex items-center gap-1 mt-0.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                   Active Context: <strong className="text-slate-200 uppercase">{activeTab}{activeTab === 'workspace' ? ` > ${workspaceStep}` : ''}</strong>

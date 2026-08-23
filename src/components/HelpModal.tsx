@@ -69,7 +69,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-base font-bold text-white font-sans tracking-tight">Semantra Documentation & Reference Console</h2>
-                <span className="px-2 py-0.5 text-[10px] font-mono font-bold bg-slate-800 text-emerald-400 border border-slate-700 rounded">v1.2 Pilot Spec</span>
+                <span className="px-2 py-0.5 text-[10px] font-mono font-bold bg-slate-800 text-emerald-400 border border-slate-700 rounded">v1.3 Enterprise &amp; Pilot Spec</span>
               </div>
               <p className="text-xs text-slate-400 mt-0.5">Deterministic-first semantic integration workbench with bounded AI validation</p>
             </div>
@@ -425,6 +425,75 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                   </p>
                 </div>
 
+                {/* Reciprocal Rank Fusion (RRF) Hybrid Search Diagnostics & Interpretation */}
+                <div className="p-4 bg-emerald-950/30 border border-emerald-800/50 rounded-xl space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-bold text-emerald-300 text-xs flex items-center gap-2 font-mono">
+                      <Sparkles className="w-4 h-4 text-emerald-400" />
+                      RRF (Reciprocal Rank Fusion) Hybrid Search Consensus
+                    </h4>
+                    <span className="px-2 py-0.5 text-[9px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 rounded">
+                      Industry Standard (k=60)
+                    </span>
+                  </div>
+                  <p className="text-slate-300 text-[11px] leading-relaxed">
+                    Semantra employs <strong>Reciprocal Rank Fusion (RRF)</strong> to combine results from two independent search engines: <em>Lexical exact-match (BM25/Fuzzy)</em> and <em>Semantic conceptual similarity (Vector/Synonym embeddings)</em>. This provides mathematical explainability and guarantees candidates are vetted against false hallucinations.
+                  </p>
+
+                  <div className="p-3 bg-slate-950 rounded-lg border border-slate-800 space-y-2 font-mono text-[11px]">
+                    <div className="text-slate-400">
+                      <strong>Mathematical Formula:</strong>
+                    </div>
+                    <div className="text-emerald-400 pl-2">
+                      RRF_Score = 1 / (60 + Rank<sub>Lexical</sub>) + 1 / (60 + Rank<sub>Semantic</sub>)
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 pt-1">
+                    <span className="text-[11px] font-bold text-slate-200 font-mono uppercase tracking-wider block">
+                      Score Range & Interpretation Matrix:
+                    </span>
+                    <div className="overflow-x-auto border border-slate-800 rounded-lg bg-slate-950/80">
+                      <table className="w-full text-left text-[11px] font-sans">
+                        <thead>
+                          <tr className="bg-slate-900 text-slate-400 font-mono text-[10px] uppercase border-b border-slate-800">
+                            <th className="p-2">RRF Range</th>
+                            <th className="p-2">Consensus Level</th>
+                            <th className="p-2">Underlying Meaning</th>
+                            <th className="p-2">Status Action</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-800/60 font-mono text-[11px]">
+                          <tr className="text-emerald-300">
+                            <td className="p-2 font-bold">0.03000 – 0.03279</td>
+                            <td className="p-2 font-sans font-bold">🟢 Perfect Consensus (Gold Standard)</td>
+                            <td className="p-2 font-sans text-slate-300">Both Lexical & Semantic ranked #1 (Max theoretical: 0.03279).</td>
+                            <td className="p-2 font-bold text-emerald-400">Auto-Accepted</td>
+                          </tr>
+                          <tr className="text-teal-300">
+                            <td className="p-2 font-bold">0.02000 – 0.02999</td>
+                            <td className="p-2 font-sans font-bold">🔵 High Alignment</td>
+                            <td className="p-2 font-sans text-slate-300">Top-1 in one engine, top 10–15 in the other (e.g. acronyms).</td>
+                            <td className="p-2 font-sans text-slate-300">Recommended Accept</td>
+                          </tr>
+                          <tr className="text-amber-300">
+                            <td className="p-2 font-bold">0.01000 – 0.01999</td>
+                            <td className="p-2 font-sans font-bold">🟡 Moderate / Partial</td>
+                            <td className="p-2 font-sans text-slate-300">Weaker ranking across one or both engines.</td>
+                            <td className="p-2 font-bold text-amber-400">Needs Review</td>
+                          </tr>
+                          <tr className="text-rose-400">
+                            <td className="p-2 font-bold">&lt; 0.01000</td>
+                            <td className="p-2 font-sans font-bold">🔴 Low / Disjoint</td>
+                            <td className="p-2 font-sans text-slate-300">Low mutual rank across both engines.</td>
+                            <td className="p-2 font-bold text-rose-400">Review / Override</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Confidence Labels & Auto-Accept */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
@@ -452,7 +521,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                       Auto-Accept Thresholds
                     </h5>
                     <p className="text-[11px] text-slate-400 font-sans">
-                      Candidates above <strong className="text-slate-200 font-mono">0.75</strong> (0.72 for SAP PIR) default to status <span className="text-emerald-400 font-mono font-bold">accepted</span>. Candidates below require <span className="text-amber-400 font-mono font-bold">needs_review</span>.
+                      Candidates with score <strong className="text-slate-200 font-mono">&ge; 0.85</strong> (0.82 for SAP PIR) default to status <span className="text-emerald-400 font-mono font-bold">accepted</span>. Candidates below require <span className="text-amber-400 font-mono font-bold">needs_review</span>.
                     </p>
                   </div>
                 </div>
@@ -1281,16 +1350,16 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                       <div className="flex items-center justify-between">
                         <span className="font-bold text-indigo-400 font-mono text-xs flex items-center gap-1.5">
                           <Network className="w-4 h-4 text-indigo-400" />
-                          14. Integration Contract Reverse Engineering
+                          14. Integration Contract Reverse Engineering (7-Step Engine)
                         </span>
-                        <span className="px-1.5 py-0.5 text-[9px] bg-indigo-500/20 text-indigo-300 rounded font-mono">Contract Engine</span>
+                        <span className="px-1.5 py-0.5 text-[9px] bg-indigo-500/20 text-indigo-300 rounded font-mono">Mode 2 Engine</span>
                       </div>
                       <p className="text-slate-300 text-[11px] leading-relaxed">
-                        Reverse-engineers raw middleware JSON/XML payloads, REST API responses, and legacy schemas into canonical integration contracts. Flattens nested paths, matches canonical candidates, synthesizes canonical JSON Schema specs, and generates executable transformation code.
+                        Reverse-engineers raw middleware JSON/XML payloads, SAP/Salesforce contracts, and legacy schemas. Automatically extracts cross-entity Foreign Keys (cardinality, CASCADE/RESTRICT rules), discovers schema constraints (<code className="text-indigo-300 font-mono">PRIMARY_KEY</code>, <code className="text-indigo-300 font-mono">NOT_NULL</code>, <code className="text-indigo-300 font-mono">CHECK</code>, <code className="text-indigo-300 font-mono">PII_MASKED</code>), synchronizes 1-click test invariants directly into the Semantra Assertions Test Suite, synthesizes canonical JSON Schema contracts, and generates executable Python/TS/SQL code with Business Analyst executive architecture reports.
                       </p>
                       <div className="bg-slate-900 p-2 rounded border border-slate-800 text-[10px] font-mono text-slate-400">
                         <span className="text-indigo-300 font-semibold">Location:</span> Workspace &gt; Mode Selector (Mode 2: Contract Reverse Engineering)<br/>
-                        <span className="text-indigo-300 font-semibold">Outcome:</span> Canonical JSON Schema contracts, field candidate matrices &amp; Python/TS transformation code
+                        <span className="text-indigo-300 font-semibold">Outcome:</span> Smart Graph FK Explorer, Assertions Synchronization, Canonical JSON Schemas, and Executive Architecture Reports
                       </div>
                     </div>
                   </div>
@@ -1322,6 +1391,68 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                       <span className="font-bold text-purple-400 block font-mono">Case 3. Canonical Semantic Rescue Path</span>
                       <p className="text-slate-300 text-[11px] leading-relaxed">
                         Triggered when heuristic score is low (<code className="text-purple-300 font-mono">0.20–0.30</code>), the target candidate is a registered canonical concept, and semantic similarity is high (<code className="text-purple-300 font-mono">semantic &gt;= 0.45</code>), but system knowledge rules are absent.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* PHASE 2: PII MASKING & CIRCUIT BREAKER RESILIENCE */}
+                <div className="p-4 bg-emerald-950/30 border border-emerald-800/60 rounded-xl space-y-4">
+                  <div className="flex items-center justify-between border-b border-emerald-900/50 pb-2.5">
+                    <h4 className="font-bold text-emerald-300 text-xs uppercase font-mono tracking-wider flex items-center gap-2">
+                      <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                      Phase 2 Architecture: PII Sanitization &amp; Circuit Breaker Fault-Tolerance
+                    </h4>
+                    <span className="px-2 py-0.5 text-[9px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded font-bold">
+                      Enterprise Privacy &amp; Reliability
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                    {/* PII Sanitization Engine */}
+                    <div className="p-3.5 bg-slate-950 border border-slate-800 rounded-lg space-y-2">
+                      <span className="font-bold text-emerald-400 font-mono text-xs flex items-center gap-1.5">
+                        🛡️ 1. Pre-Flight PII Masking &amp; Tokenization
+                      </span>
+                      <p className="text-slate-300 text-[11px] leading-relaxed">
+                        Before any prompt, payload, or companion file content is transmitted to Gemini or external LLMs, Semantra scans and intercepts sensitive PII entities:
+                      </p>
+                      <ul className="list-disc list-inside text-slate-400 text-[10px] space-y-1 font-mono">
+                        <li><strong>Emails:</strong> <code className="text-emerald-300">user@corp.com</code> &rarr; <code className="text-emerald-400">[MASKED_EMAIL_1]</code></li>
+                        <li><strong>IBAN / Bank Accounts:</strong> <code className="text-emerald-300">RS35...</code> &rarr; <code className="text-emerald-400">[MASKED_IBAN_1]</code></li>
+                        <li><strong>Tax IDs &amp; PIB:</strong> <code className="text-emerald-300">104582910</code> &rarr; <code className="text-emerald-400">[MASKED_TAX_ID_1]</code></li>
+                        <li><strong>National IDs / JMBG:</strong> 13-digit IDs &rarr; <code className="text-emerald-400">[MASKED_NATIONAL_ID_1]</code></li>
+                        <li><strong>Credit Cards &amp; Phones:</strong> Intercepted and tokenized with safe dictionary map.</li>
+                      </ul>
+                      <p className="text-slate-400 text-[10px] pt-1">
+                        Token dictionaries remain securely in memory. Authorized views can perform reverse rehydration without ever leaking raw data over the network.
+                      </p>
+                    </div>
+
+                    {/* Circuit Breaker Machine */}
+                    <div className="p-3.5 bg-slate-950 border border-slate-800 rounded-lg space-y-2">
+                      <span className="font-bold text-amber-400 font-mono text-xs flex items-center gap-1.5">
+                        ⚡ 2. Circuit Breaker &amp; Deterministic Fallback
+                      </span>
+                      <p className="text-slate-300 text-[11px] leading-relaxed">
+                        Protects UI responsiveness and guarantees zero mapping pipeline blockage during API outages or quota limits:
+                      </p>
+                      <div className="space-y-1.5 text-[10px] font-mono">
+                        <div className="p-1.5 bg-slate-900 rounded border border-slate-800 flex justify-between">
+                          <span className="text-emerald-400 font-bold">CLOSED:</span>
+                          <span className="text-slate-300">Normal execution. Latency &lt; 8,000ms.</span>
+                        </div>
+                        <div className="p-1.5 bg-slate-900 rounded border border-slate-800 flex justify-between">
+                          <span className="text-rose-400 font-bold">OPEN:</span>
+                          <span className="text-slate-300">Trips on 3 consecutive failures. Fast fallback.</span>
+                        </div>
+                        <div className="p-1.5 bg-slate-900 rounded border border-slate-800 flex justify-between">
+                          <span className="text-amber-400 font-bold">HALF_OPEN:</span>
+                          <span className="text-slate-300">Probes service recovery after 15s cooldown.</span>
+                        </div>
+                      </div>
+                      <p className="text-slate-400 text-[10px] pt-1">
+                        When OPEN, endpoints immediately engage multi-signal heuristic rules (Levenshtein, Taxonomy, Canonical) with 100% fidelity.
                       </p>
                     </div>
                   </div>
@@ -1492,7 +1623,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                   <div className="flex items-center justify-between">
                     <h4 className="font-bold text-emerald-300 text-xs font-mono uppercase tracking-wider flex items-center gap-2">
                       <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                      Stewardship Console Ledger & Glossary Promotion
+                      Stewardship Console Ledger &amp; Glossary Promotion
                     </h4>
                     <span className="px-2 py-0.5 text-[10px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded">
                       2-Step Governed Promotion
@@ -1508,6 +1639,55 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                     <p className="text-slate-400 text-[11px] leading-relaxed">
                       Executing <code className="text-emerald-300 font-mono">Promote to Glossary</code> is a deliberate second-step governance action that extracts overlay alias entries, writes them permanently into the master canonical glossary, updates item status to <code className="text-emerald-300 font-mono">promoted</code>, and appends timestamped audit logs with reviewer details.
                     </p>
+                  </div>
+                </div>
+
+                {/* Git-Like Branching & 3-Way Merge Conflict Resolution Wizard */}
+                <div className="p-4 bg-gradient-to-r from-slate-950 to-indigo-950/40 border border-indigo-500/30 rounded-xl space-y-4">
+                  <div className="flex items-center justify-between border-b border-indigo-900/50 pb-2.5">
+                    <h4 className="font-bold text-indigo-300 text-xs uppercase font-mono tracking-wider flex items-center gap-2">
+                      <GitBranch className="w-4 h-4 text-indigo-400" />
+                      Git-Like Branching &amp; 3-Way Merge Conflict Resolution Wizard
+                    </h4>
+                    <span className="px-2 py-0.5 text-[9px] font-mono bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded font-bold">
+                      Advanced Stewardship Engine
+                    </span>
+                  </div>
+
+                  <p className="text-slate-300 text-xs leading-relaxed">
+                    Semantra implements a robust Git-like version control paradigm for enterprise canonical vocabularies, enabling data architects to collaborate across branch sandboxes without breaking production mappings:
+                  </p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                    <div className="p-3 bg-slate-900 border border-slate-800 rounded-lg space-y-1.5">
+                      <span className="font-bold text-emerald-400 font-mono block flex items-center gap-1.5">
+                        <GitBranch className="w-3.5 h-3.5" />
+                        1. Branch Isolation &amp; Sandboxes
+                      </span>
+                      <p className="text-slate-400 text-[11px] leading-relaxed">
+                        Create feature or rollout branches (e.g. <code className="text-emerald-300 font-mono">main</code>, <code className="text-emerald-300 font-mono">draft-salesforce-q3</code>, <code className="text-emerald-300 font-mono">feature-tax-harmonization</code>). Draft modifications remain completely isolated until explicit merge.
+                      </p>
+                    </div>
+
+                    <div className="p-3 bg-slate-900 border border-slate-800 rounded-lg space-y-1.5">
+                      <span className="font-bold text-cyan-400 font-mono block flex items-center gap-1.5">
+                        <Scale className="w-3.5 h-3.5" />
+                        2. 3-Way Merge Conflict Wizard
+                      </span>
+                      <p className="text-slate-400 text-[11px] leading-relaxed">
+                        When merging draft overlays into <code className="text-cyan-300 font-mono">main</code>, the wizard detects schema collisions and allows attribute-by-attribute resolution: <strong>Use Draft</strong>, <strong>Keep Main</strong>, or <strong>Custom Override</strong>.
+                      </p>
+                    </div>
+
+                    <div className="p-3 bg-slate-900 border border-slate-800 rounded-lg space-y-1.5">
+                      <span className="font-bold text-purple-400 font-mono block flex items-center gap-1.5">
+                        <ShieldCheck className="w-3.5 h-3.5" />
+                        3. Stewardship Audit Trail
+                      </span>
+                      <p className="text-slate-400 text-[11px] leading-relaxed">
+                        Every merge execution generates a cryptographic commit hash (<code className="text-purple-300 font-mono">c7f92a1...</code>) and idempotency transaction key, appended to an immutable JSON-exportable audit ledger.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1570,59 +1750,55 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-bold text-white flex items-center gap-2">
                       <Terminal className="w-5 h-5 text-emerald-400" />
-                      8. Web Workbench vs Python Semantra Backend
+                      8. Full-Stack TypeScript &amp; Node.js Architecture
                     </h3>
                     <span className="px-2 py-0.5 text-[10px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded">
-                      Runtime Comparison
+                      Native Stack
                     </span>
                   </div>
-                  <p className="text-slate-400 text-xs mt-1">Comparing browser execution, Python FastAPI services, and Streamlit deployment environments.</p>
+                  <p className="text-slate-400 text-xs mt-1">High-performance full-stack web application powered by React 18, Vite, Express (Node.js), and Google Gemini AI.</p>
                 </div>
 
                 <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-3">
-                  <h4 className="font-bold text-emerald-300 text-xs uppercase tracking-wider font-mono">Execution Environment Architecture</h4>
+                  <h4 className="font-bold text-emerald-300 text-xs uppercase tracking-wider font-mono">Unified Runtime Architecture</h4>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                     <div className="p-3.5 bg-slate-900 rounded-xl border border-slate-800 space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="font-bold text-white text-xs block font-mono">🌐 Web Standalone Workbench</span>
-                        <span className="px-1.5 py-0.5 text-[9px] bg-emerald-500/20 text-emerald-300 rounded font-mono">Browser Native</span>
+                        <span className="font-bold text-white text-xs block font-mono">🌐 Frontend Client (React 18 + Vite)</span>
+                        <span className="px-1.5 py-0.5 text-[9px] bg-emerald-500/20 text-emerald-300 rounded font-mono">Client Tier</span>
                       </div>
                       <p className="text-slate-300 text-[11px] leading-relaxed">
-                        Client-side React 18 + Vite application running 100% in browser memory with local persistence. Provides instant, interactive mapping feedback without requiring local Python installation or backend server dependencies.
+                        Responsive single-page application built with React 18, Tailwind CSS, Lucide icons, and Motion animations. Executes deterministic multi-signal scoring, 3-way conflict resolution, and schema transformations in real-time.
                       </p>
                     </div>
 
                     <div className="p-3.5 bg-slate-900 rounded-xl border border-slate-800 space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="font-bold text-white text-xs block font-mono">🐍 Python Semantra Service</span>
-                        <span className="px-1.5 py-0.5 text-[9px] bg-cyan-500/20 text-cyan-300 rounded font-mono">Python / FastAPI</span>
+                        <span className="font-bold text-white text-xs block font-mono">⚡ Backend Server (Express / Node.js)</span>
+                        <span className="px-1.5 py-0.5 text-[9px] bg-cyan-500/20 text-cyan-300 rounded font-mono">Server Tier</span>
                       </div>
                       <p className="text-slate-300 text-[11px] leading-relaxed">
-                        FastAPI backend (<code className="text-cyan-300 font-mono">backend/app/main.py</code>) with SQLite database (<code className="text-cyan-300 font-mono">semantra.sqlite3</code>) and Streamlit shell (<code className="text-cyan-300 font-mono">streamlit_app.py</code>). Executed locally via <code className="text-cyan-300 font-mono">start_semantra.ps1</code> or Uvicorn server.
+                        Express server (<code className="text-cyan-300 font-mono">server.ts</code>) orchestrates secure server-side Gemini 2.5 API requests, provides health telemetry endpoints, and manages full-stack bundle delivery.
                       </p>
                     </div>
                   </div>
                 </div>
 
                 <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-2 font-mono text-xs">
-                  <h4 className="font-bold text-slate-200 text-xs uppercase font-sans font-semibold">Local Python Start Commands</h4>
+                  <h4 className="font-bold text-slate-200 text-xs uppercase font-sans font-semibold">Production &amp; Development Execution</h4>
                   <div className="p-3 bg-slate-900 border border-slate-800 rounded-lg space-y-2">
                     <div className="flex items-center justify-between text-[11px]">
-                      <span className="text-slate-400">Windows Launcher Script:</span>
-                      <code className="text-emerald-400 font-bold">.\start_semantra.ps1</code>
+                      <span className="text-slate-400">Development Server:</span>
+                      <code className="text-emerald-400 font-bold">npm run dev (Port 3000)</code>
                     </div>
                     <div className="flex items-center justify-between text-[11px]">
-                      <span className="text-slate-400">Manual FastAPI Backend:</span>
-                      <code className="text-cyan-400 font-bold">python -m uvicorn backend.app.main:app --port 8000</code>
+                      <span className="text-slate-400">Production Compilation:</span>
+                      <code className="text-cyan-400 font-bold">npm run build</code>
                     </div>
                     <div className="flex items-center justify-between text-[11px]">
-                      <span className="text-slate-400">Manual Streamlit UI:</span>
-                      <code className="text-purple-400 font-bold">streamlit run streamlit_app.py</code>
-                    </div>
-                    <div className="flex items-center justify-between text-[11px]">
-                      <span className="text-slate-400">Targeted Backend Tests:</span>
-                      <code className="text-amber-400 font-bold">python -m pytest backend/tests/test_mapping_service.py</code>
+                      <span className="text-slate-400">Production Server Start:</span>
+                      <code className="text-purple-400 font-bold">node dist/server.cjs</code>
                     </div>
                   </div>
                 </div>
@@ -1630,7 +1806,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                 <div className="p-3.5 bg-emerald-950/30 border border-emerald-900/50 rounded-xl flex items-center gap-3">
                   <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
                   <p className="text-emerald-200 text-[11px]">
-                    This Web Workbench faithfully replicates all Semantra multi-signal scoring algorithms, LLM execution gates, overlay promotion flows, and transformation code generators with 100% functional parity.
+                    Semantra Enterprise Workbench runs as a unified, zero-dependency Node.js and React container with complete deterministic scoring algorithms, LLM gates, stewardship ledger, and contract engineering engines.
                   </p>
                 </div>
               </div>
@@ -1834,12 +2010,42 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                     {/* WF-13 */}
                     <div className="p-3.5 bg-slate-950 border border-indigo-800/60 rounded-xl space-y-2 md:col-span-2">
                       <div className="flex items-center justify-between border-b border-indigo-800/80 pb-2">
-                        <span className="font-bold text-indigo-400 font-mono">WF-13 • Integration Contract Reverse Engineering</span>
+                        <span className="font-bold text-indigo-400 font-mono">WF-13 • Integration Contract Reverse Engineering (7-Step Pipeline)</span>
                         <span className="px-1.5 py-0.5 text-[9px] bg-indigo-500/20 text-indigo-300 rounded font-mono">Workspace &gt; Mode 2</span>
                       </div>
                       <p className="text-slate-300 text-[11px] leading-relaxed">
-                        <strong>Purpose:</strong> Paste or upload raw integration payloads (JSON/XML) or API schemas, automatically extract nested properties, calculate canonical field matches, synthesize canonical JSON Schema contracts, and export Python or TypeScript transformation code for ESB/middleware integration.
+                        <strong>Purpose:</strong> Paste or upload raw integration payloads (JSON/XML) or API schemas. Follows a deterministic 7-step reverse engineering pipeline:
                       </p>
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-2 font-mono text-[10px] text-slate-300">
+                        <div className="p-2 bg-slate-900 rounded border border-slate-800">
+                          <span className="text-emerald-400 font-bold block">1. Ingest &amp; Health Audit</span>
+                          Parse payloads, compute health scores &amp; payload quality metrics.
+                        </div>
+                        <div className="p-2 bg-slate-900 rounded border border-slate-800">
+                          <span className="text-cyan-400 font-bold block">2. Deconstruction</span>
+                          Flatten nested paths, detect leaf types &amp; candidate matches.
+                        </div>
+                        <div className="p-2 bg-slate-900 rounded border border-slate-800">
+                          <span className="text-indigo-400 font-bold block">3. Smart Graph &amp; FKs</span>
+                          Discover cross-entity Foreign Keys, cardinality &amp; CASCADE actions.
+                        </div>
+                        <div className="p-2 bg-slate-900 rounded border border-slate-800">
+                          <span className="text-emerald-400 font-bold block">4. Assertions Sync</span>
+                          1-Click sync of invariants &amp; constraints into Semantra Test Suite.
+                        </div>
+                        <div className="p-2 bg-slate-900 rounded border border-slate-800">
+                          <span className="text-purple-400 font-bold block">5. Canonical Synthesis</span>
+                          Synthesize unified JSON Schema models &amp; domain entities.
+                        </div>
+                        <div className="p-2 bg-slate-900 rounded border border-slate-800">
+                          <span className="text-amber-400 font-bold block">6. Refine &amp; Export</span>
+                          Generate Python, TypeScript, SQL DDL &amp; JSON Schema.
+                        </div>
+                        <div className="p-2 bg-slate-900 rounded border border-slate-800 md:col-span-2">
+                          <span className="text-pink-400 font-bold block">7. Visual Architecture &amp; BA Report</span>
+                          Interactive diagram visualization &amp; Business Analyst Executive Report with risk analysis.
+                        </div>
+                      </div>
                     </div>
 
                   </div>
@@ -1888,7 +2094,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
 
         {/* Footer */}
         <div className="px-6 py-3 bg-slate-950 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-500 font-mono shrink-0">
-          <span>Semantra v1.2 Pilot Workbench • Mapping Signals & Scoring Reference Spec</span>
+          <span>Semantra v1.3 Enterprise &amp; Pilot Workbench • Mapping Signals &amp; Scoring Reference Spec</span>
           <button 
             onClick={onClose}
             className="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg font-sans font-semibold text-xs transition-colors cursor-pointer"

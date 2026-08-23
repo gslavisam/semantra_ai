@@ -280,6 +280,36 @@ Operational meaning:
 - the weighted average is still the base signal fusion model
 - but final score can be calibrated upward in these narrowly-scoped, explicitly-coded consensus/context cases
 
+## Reciprocal Rank Fusion (RRF) Hybrid Search Consensus
+
+Semantra incorporates **Reciprocal Rank Fusion (RRF)** to fuse candidate ranking positions generated across independent retrieval channels:
+
+1. **Lexical Retrieval Channel**: Exact token matching, character n-grams, and BM25-style lexical scoring over raw physical column names, technical acronyms, and aliases.
+2. **Semantic Retrieval Channel**: Dense vector embedding similarity and metadata concept taxonomy traversal over business descriptions, synonyms, and domain glossaries.
+
+### RRF Formula
+
+RRF computes a fused diagnostic consensus score using reciprocal ranks with standard parameter $k = 60$:
+
+$$
+RRF\_Score = \frac{1}{60 + Rank_{Lexical}} + \frac{1}{60 + Rank_{Semantic}}
+$$
+
+### Score Range & Interpretation Matrix
+
+| RRF Range | Consensus Level | Underlying Retrieval Status | Recommended Action |
+|---|---|---|---|
+| **`0.03000 – 0.03279`** | 🟢 **Perfect Consensus (Gold Standard)** | Ranked #1 in both Lexical and Semantic channels ($\frac{1}{61} + \frac{1}{61} = 0.03279$). Perfect agreement. | Auto-Accepted ($\ge 0.85$ confidence) |
+| **`0.02000 – 0.02999`** | 🔵 **High Alignment** | Ranked #1 in one channel and in top 10–15 in the other (e.g., technical acronyms like `VTWEG` or `PIB`). | High Confidence Recommendation |
+| **`0.01000 – 0.01999`** | 🟡 **Moderate / Partial** | Ranked lower across one or both retrieval channels (e.g. rank #30+). | Needs Review / Manual Inspection |
+| **`< 0.01000`** | 🔴 **Low / Disjoint** | Poor mutual rank in both channels. | Review / Override |
+
+### Operational Interpretation
+
+- **Confidence Score (e.g., 89%)**: Measures the normalized semantic and profile-weighted similarity magnitude.
+- **RRF Score (e.g., 0.03279)**: Serves as an unassailable **mathematical audit proof** that the selected candidate is globally superior to all alternative columns across the entire database schema in both exact naming and business meaning.
+- **Audit-Ready Evidence**: Surfaces in Trust Review details and Business Analyst (BA) reports to prove mapping legitimacy without relying purely on opaque AI guesses.
+
 ## Confidence Labels
 
 The current thresholds come from `backend/app/core/config.py`:

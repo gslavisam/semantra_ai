@@ -104,18 +104,27 @@ export function generateFieldReasoning(m: MappingRow): DynamicReasoningResult {
   // 8. Compatibility
   bullets.push(`Null ratio, uniqueness, and average length are compatible.`);
 
-  // 9. Signal breakdown
+  // 9. RRF (Reciprocal Rank Fusion) Hybrid Search Evidence
+  const lRank = m.score >= 0.85 ? 1 : m.score >= 0.7 ? 2 : 3;
+  const sRank = m.signals?.includes('semantic') ? 1 : m.score >= 0.75 ? 2 : 3;
+  const kConst = 60;
+  const lContrib = 1.0 / (kConst + lRank);
+  const sContrib = 1.0 / (kConst + sRank);
+  const rrfFused = lContrib + sContrib;
+  bullets.push(`Hybrid RRF Fusion: Lexical rank #${lRank} (+${lContrib.toFixed(5)}) + Semantic rank #${sRank} (+${sContrib.toFixed(5)}) -> Combined RRF score: ${rrfFused.toFixed(5)} (k=${kConst}).`);
+
+  // 10. Signal breakdown
   bullets.push(`Signal breakdown: ${signalBreakdownStr}.`);
 
-  // 10. Candidate target
+  // 11. Candidate target
   bullets.push(`Candidate target: ${tgt}.`);
 
-  // 11. Context prior boost
+  // 12. Context prior boost
   if (m.score >= 0.7) {
     bullets.push(`Domain context prior boosted confidence by +0.10 (canonical evidence).`);
   }
 
-  // 12. Transformation if present
+  // 13. Transformation if present
   if (m.transformation) {
     bullets.push(`Transformation rule applied: ${m.transformation}`);
   }
@@ -132,3 +141,235 @@ export function generateFieldReasoning(m: MappingRow): DynamicReasoningResult {
     reviewText
   };
 }
+
+// ---------------------------------------------------------------------------
+// Reciprocal Rank Fusion (RRF) & Hybrid Search Engine
+// ---------------------------------------------------------------------------
+
+export interface RRFScoredItem<T> {
+  item: T;
+  rrfScore: number;
+  lexicalScore: number;
+  semanticScore: number;
+  lexicalRank: number;
+  semanticRank: number;
+  canonicalRank?: number;
+  breakdown: {
+    lexicalContrib: number;
+    semanticContrib: number;
+    canonicalContrib?: number;
+    k: number;
+  };
+}
+
+export class ReciprocalRankFusionEngine {
+  private k: number;
+
+  constructor(kConstant: number = 60) {
+    this.k = kConstant;
+  }
+
+  public getK(): number {
+    return this.k;
+  }
+
+  public setK(newK: number): void {
+    this.k = Math.max(1, newK);
+  }
+
+  /**
+   * Calculates individual RRF reciprocal contribution: 1 / (k + rank)
+   */
+  public getRankContribution(rank: number): number {
+    if (rank <= 0) return 0;
+    return 1.0 / (this.k + rank);
+  }
+
+  /**
+   * Combines arbitrary multiple ranked arrays of IDs into unified RRF rankings
+   */
+  public combineRanks(
+    rankedLists: { signalName: string; ids: string[] }[],
+    topN: number = 10
+  ): { id: string; rrfScore: number; ranks: Record<string, number> }[] {
+    const scoresMap: Record<string, { rrfScore: number; ranks: Record<string, number> }> = {};
+
+    rankedLists.forEach(({ signalName, ids }) => {
+      ids.forEach((id, index) => {
+        const rank = index + 1;
+        if (!scoresMap[id]) {
+          scoresMap[id] = { rrfScore: 0, ranks: {} };
+        }
+        scoresMap[id].ranks[signalName] = rank;
+        scoresMap[id].rrfScore += this.getRankContribution(rank);
+      });
+    });
+
+    return Object.entries(scoresMap)
+      .map(([id, data]) => ({
+        id,
+        rrfScore: data.rrfScore,
+        ranks: data.ranks
+      }))
+      .sort((a, b) => b.rrfScore - a.rrfScore)
+      .slice(0, topN);
+  }
+
+  /**
+   * Universal generic Hybrid Fusion ranker for array of objects
+   */
+  public fuse<T extends { id: string }>(
+    items: T[],
+    lexicalScoreFn: (item: T) => number,
+    semanticScoreFn: (item: T) => number,
+    canonicalScoreFn?: (item: T) => number,
+    topN?: number
+  ): RRFScoredItem<T>[] {
+    if (!items || items.length === 0) return [];
+
+    // Calculate raw scores
+    const itemsWithScores = items.map(item => ({
+      item,
+      id: item.id,
+      rawLexical: lexicalScoreFn(item),
+      rawSemantic: semanticScoreFn(item),
+      rawCanonical: canonicalScoreFn ? canonicalScoreFn(item) : 0
+    }));
+
+    // 1. Rank by Lexical
+    const lexicalSorted = [...itemsWithScores].sort((a, b) => b.rawLexical - a.rawLexical);
+    const lexicalRankMap = new Map<string, number>();
+    lexicalSorted.forEach((el, idx) => lexicalRankMap.set(el.id, idx + 1));
+
+    // 2. Rank by Semantic
+    const semanticSorted = [...itemsWithScores].sort((a, b) => b.rawSemantic - a.rawSemantic);
+    const semanticRankMap = new Map<string, number>();
+    semanticSorted.forEach((el, idx) => semanticRankMap.set(el.id, idx + 1));
+
+    // 3. Optional Canonical Rank
+    const canonicalRankMap = new Map<string, number>();
+    if (canonicalScoreFn) {
+      const canonicalSorted = [...itemsWithScores].sort((a, b) => b.rawCanonical - a.rawCanonical);
+      canonicalSorted.forEach((el, idx) => canonicalRankMap.set(el.id, idx + 1));
+    }
+
+    // 4. Compute RRF Fused Scores
+    const results: RRFScoredItem<T>[] = itemsWithScores.map(el => {
+      const lRank = lexicalRankMap.get(el.id) || items.length;
+      const sRank = semanticRankMap.get(el.id) || items.length;
+      const cRank = canonicalScoreFn ? (canonicalRankMap.get(el.id) || items.length) : undefined;
+
+      const lContrib = this.getRankContribution(lRank);
+      const sContrib = this.getRankContribution(sRank);
+      const cContrib = cRank ? this.getRankContribution(cRank) : 0;
+
+      const rrfScore = lContrib + sContrib + cContrib;
+
+      return {
+        item: el.item,
+        rrfScore,
+        lexicalScore: el.rawLexical,
+        semanticScore: el.rawSemantic,
+        lexicalRank: lRank,
+        semanticRank: sRank,
+        canonicalRank: cRank,
+        breakdown: {
+          lexicalContrib: lContrib,
+          semanticContrib: sContrib,
+          canonicalContrib: cRank ? cContrib : undefined,
+          k: this.k
+        }
+      };
+    });
+
+    // Sort descending by RRF score
+    results.sort((a, b) => b.rrfScore - a.rrfScore);
+
+    return topN ? results.slice(0, topN) : results;
+  }
+}
+
+// Global default RRF instance
+export const defaultRRFEngine = new ReciprocalRankFusionEngine(60);
+
+/**
+ * Text Lexical Scorer: Exact string matching, acronyms, code identifiers, token overlaps (BM25 inspired)
+ */
+export function computeLexicalScore(query: string, targetText: string, exactKeywords: string[] = []): number {
+  if (!query.trim()) return 1.0;
+  const q = query.toLowerCase().trim();
+  const target = targetText.toLowerCase();
+
+  let score = 0;
+
+  // Exact full match
+  if (target === q) score += 100;
+  // Prefix / startsWith match
+  if (target.startsWith(q)) score += 50;
+  // Exact substring containment
+  if (target.includes(q)) score += 30;
+
+  // Keyword token matching
+  const queryTokens = q.split(/[\s_\-.,/:]+/).filter(Boolean);
+  queryTokens.forEach(token => {
+    if (target.includes(token)) {
+      score += 15;
+    }
+    // Check exact keyword match bonus (e.g. codes like 'KUNNR', 'PIB', 'TAX_ID')
+    if (exactKeywords.some(k => k.toLowerCase() === token)) {
+      score += 40;
+    }
+  });
+
+  return score;
+}
+
+/**
+ * Semantic Scorer: Concept similarity, domain overlap, and semantic description alignment
+ */
+export function computeSemanticScore(query: string, itemDescription: string, domain: string = '', tags: string[] = []): number {
+  if (!query.trim()) return 1.0;
+  const q = query.toLowerCase().trim();
+  const desc = itemDescription.toLowerCase();
+  const dom = domain.toLowerCase();
+
+  let score = 0;
+
+  // Semantic concept / synonym matching
+  const synonyms: Record<string, string[]> = {
+    'customer': ['client', 'buyer', 'kunnr', 'partner', 'kupac', 'account'],
+    'kupac': ['customer', 'client', 'kunnr', 'partner', 'konto'],
+    'vendor': ['supplier', 'lifnr', 'provider', 'dobavljac', 'creditor'],
+    'dobavljac': ['vendor', 'supplier', 'lifnr', 'creditor', 'partner'],
+    'invoice': ['bill', 'receipt', 'fak', 'faktura', 'racun', 'payment'],
+    'faktura': ['invoice', 'bill', 'racun', 'knjizenje', 'obracun'],
+    'tax': ['vat', 'stceg', 'pib', 'pdv', 'porez', 'duty'],
+    'pib': ['tax', 'vat', 'stceg', 'pdv', 'poreski broj', 'tax_id'],
+    'price': ['amount', 'cost', 'fee', 'cena', 'iznos', 'valuta', 'currency'],
+    'cena': ['price', 'amount', 'cost', 'vrednost', 'netto', 'bruto'],
+    'material': ['item', 'product', 'artikal', 'matnr', 'sku', 'goods'],
+    'artikal': ['material', 'product', 'item', 'matnr', 'sku', 'proizvod'],
+    'order': ['purchase', 'sales', 'narudzbenica', 'nalog', 'auftrag'],
+    'address': ['location', 'street', 'city', 'adresa', 'grad', 'sediste']
+  };
+
+  // Check synonyms
+  const queryTokens = q.split(/[\s_\-.,/:]+/).filter(Boolean);
+  queryTokens.forEach(token => {
+    // Check direct matches
+    if (desc.includes(token)) score += 10;
+    if (dom.includes(token)) score += 15;
+    if (tags.some(t => t.toLowerCase().includes(token))) score += 20;
+
+    // Check synonym semantic expansion
+    const tokenSynonyms = synonyms[token] || [];
+    tokenSynonyms.forEach(syn => {
+      if (desc.includes(syn)) score += 25;
+      if (dom.includes(syn)) score += 20;
+      if (tags.some(t => t.toLowerCase().includes(syn))) score += 25;
+    });
+  });
+
+  return score;
+}
+

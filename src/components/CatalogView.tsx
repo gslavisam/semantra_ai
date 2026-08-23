@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Search, 
   SearchCode, 
@@ -20,9 +20,21 @@ import {
   RotateCcw,
   SlidersHorizontal,
   Sparkles,
-  Layers
+  Layers,
+  Zap,
+  BookOpen,
+  Binary,
+  Cpu,
+  Calculator,
+  ChevronDown
 } from 'lucide-react';
-import { CatalogEntry } from '../types';
+import { CatalogEntry, SearchMode } from '../types';
+import { 
+  ReciprocalRankFusionEngine, 
+  computeLexicalScore, 
+  computeSemanticScore,
+  RRFScoredItem
+} from '../lib/reasoning';
 
 interface CatalogViewProps {
   catalogEntries: CatalogEntry[];
@@ -40,6 +52,11 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
   const [isImporting, setIsImporting] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
 
+  // Search Engine Mode & RRF Parameter Tuning
+  const [searchMode, setSearchMode] = useState<SearchMode>('hybrid');
+  const [rrfKConstant, setRrfKConstant] = useState<number>(60);
+  const [showRrfInspector, setShowRrfInspector] = useState<boolean>(false);
+
   // Advanced Filters State
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedSource, setSelectedSource] = useState<string>('all');
@@ -54,7 +71,7 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
   const selectedEntry = catalogEntries.find(e => e.id === selectedEntryId) || catalogEntries[0] || null;
 
   // Dynamically extract all unique tags from active catalog
-  const allUniqueTags = React.useMemo(() => {
+  const allUniqueTags = useMemo(() => {
     const tagsSet = new Set<string>();
     catalogEntries.forEach(entry => {
       if (entry.tags) {
@@ -65,13 +82,13 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
   }, [catalogEntries]);
 
   // Dynamically extract unique source & target systems
-  const sourceSystems = React.useMemo(() => {
+  const sourceSystems = useMemo(() => {
     const systems = new Set<string>();
     catalogEntries.forEach(e => systems.add(e.sourceSystem));
     return Array.from(systems).sort();
   }, [catalogEntries]);
 
-  const targetSystems = React.useMemo(() => {
+  const targetSystems = useMemo(() => {
     const systems = new Set<string>();
     catalogEntries.forEach(e => systems.add(e.targetSystem));
     return Array.from(systems).sort();
@@ -132,16 +149,20 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
     setSelectedSource('all');
     setSelectedTarget('all');
     setMinFitScore(0);
+    setSearchMode('hybrid');
+    setRrfKConstant(60);
   };
 
-  // Filter catalog entries
-  const filteredEntries = React.useMemo(() => {
-    return catalogEntries.filter((entry) => {
-      // Text match
-      const textPool = `${entry.name} ${entry.description} ${entry.owner} ${entry.sourceSystem} ${entry.targetSystem}`.toLowerCase();
-      const matchesText = textPool.includes(searchTerm.toLowerCase());
+  // -------------------------------------------------------------------------
+  // RRF (Reciprocal Rank Fusion) Engine Execution
+  // -------------------------------------------------------------------------
+  const rrfEngine = useMemo(() => new ReciprocalRankFusionEngine(rrfKConstant), [rrfKConstant]);
 
-      // Tags match (AND gate compliance: must contain all selected tags)
+  // Scored and Filtered Catalog entries
+  const filteredAndScoredEntries = useMemo(() => {
+    // 1. Base filter
+    const baseFiltered = catalogEntries.filter((entry) => {
+      // Tags match
       const entryTags = entry.tags || [];
       const matchesTags = selectedTags.length === 0 || selectedTags.every(t => entryTags.includes(t));
 
@@ -155,9 +176,72 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
       const displayFit = entry.reuseFitScore <= 1.0 ? Math.round(entry.reuseFitScore * 100) : Math.round(entry.reuseFitScore);
       const matchesFit = displayFit >= minFitScore;
 
-      return matchesText && matchesTags && matchesSource && matchesTarget && matchesFit;
+      return matchesTags && matchesSource && matchesTarget && matchesFit;
     });
-  }, [catalogEntries, searchTerm, selectedTags, selectedSource, selectedTarget, minFitScore]);
+
+    if (!searchTerm.trim()) {
+      // Return unranked list when there is no search query
+      return baseFiltered.map(entry => ({
+        ...entry,
+        rrfRank: undefined,
+        rrfScore: undefined,
+        lexicalRank: undefined,
+        semanticRank: undefined,
+        lexicalScore: 0,
+        semanticScore: 0,
+        breakdown: undefined
+      }));
+    }
+
+    // 2. Compute Lexical & Semantic scores for each entry
+    const exactCodeKeywords = ['kunnr', 'lifnr', 'matnr', 'bukrs', 'stceg', 'pib', 'vat', 'tax_id', 'inv', 'order', 'sku'];
+
+    const lexicalScoreFn = (entry: CatalogEntry) => {
+      const mappingFields = (entry.mappings || []).map(m => `${m.source} ${m.target}`).join(' ');
+      const targetText = `${entry.name} ${entry.sourceSystem} ${entry.targetSystem} ${entry.tags?.join(' ') || ''} ${mappingFields}`;
+      return computeLexicalScore(searchTerm, targetText, exactCodeKeywords);
+    };
+
+    const semanticScoreFn = (entry: CatalogEntry) => {
+      const targetDesc = `${entry.description} ${entry.reuseExplanation || ''}`;
+      const domain = `${entry.sourceSystem} ${entry.targetSystem}`;
+      return computeSemanticScore(searchTerm, targetDesc, domain, entry.tags || []);
+    };
+
+    // 3. Execute Fusion
+    const fusedResults = rrfEngine.fuse(
+      baseFiltered,
+      lexicalScoreFn,
+      semanticScoreFn
+    );
+
+    // 4. Sort based on search mode
+    let sorted = [...fusedResults];
+    if (searchMode === 'lexical') {
+      sorted.sort((a, b) => b.lexicalScore - a.lexicalScore);
+    } else if (searchMode === 'semantic') {
+      sorted.sort((a, b) => b.semanticScore - a.semanticScore);
+    } else {
+      // 'hybrid' (RRF) is default
+      sorted.sort((a, b) => b.rrfScore - a.rrfScore);
+    }
+
+    // Map back with ranking metadata
+    return sorted.map((res, index) => ({
+      ...res.item,
+      rrfRank: index + 1,
+      rrfScore: res.rrfScore,
+      lexicalRank: res.lexicalRank,
+      semanticRank: res.semanticRank,
+      lexicalScore: res.lexicalScore,
+      semanticScore: res.semanticScore,
+      breakdown: res.breakdown
+    }));
+  }, [catalogEntries, searchTerm, selectedTags, selectedSource, selectedTarget, minFitScore, searchMode, rrfEngine]);
+
+  const selectedScoredEntry = useMemo(() => {
+    return filteredAndScoredEntries.find(e => e.id === selectedEntryId) || filteredAndScoredEntries[0] || null;
+  }, [filteredAndScoredEntries, selectedEntryId]);
 
   // Import mappings action
   const handleImport = (entry: CatalogEntry) => {
@@ -168,7 +252,7 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
     }, 1000);
   };
 
-  const isFilterActive = searchTerm !== '' || selectedTags.length > 0 || selectedSource !== 'all' || selectedTarget !== 'all' || minFitScore > 0;
+  const isFilterActive = searchTerm !== '' || selectedTags.length > 0 || selectedSource !== 'all' || selectedTarget !== 'all' || minFitScore > 0 || searchMode !== 'hybrid' || rrfKConstant !== 60;
 
   return (
     <div className="space-y-6">
@@ -178,15 +262,21 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
           <div className="space-y-1">
             <h2 className="text-lg font-sans font-semibold text-slate-900 tracking-tight flex items-center gap-2">
               <SearchCode className="w-5 h-5 text-emerald-500" />
-              Enterprise Integration Catalog
+              Enterprise Integration Catalog & Hybrid Search Engine
             </h2>
             <p className="text-sm text-slate-500 leading-relaxed font-sans max-w-3xl">
-              Search, compare, and reuse approved corporate mapping sets. Semantra scans active workspace schemas, calculates a dynamic **Workspace Reuse Fit** score, and lets you import golden-standard baselines to skip cold-start auto-mapping.
+              Search and reuse corporate mapping blueprints using **Reciprocal Rank Fusion (RRF)**. Combines exact lexical token matching (BM25) and dense semantic concept similarity into a unified, optimal ranking.
             </p>
           </div>
-          <span className="shrink-0 text-xs text-slate-400 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg font-mono">
-            <strong>{catalogEntries.length}</strong> Registered Corporate Blueprints
-          </span>
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-xs text-slate-500 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg font-mono">
+              <strong>{catalogEntries.length}</strong> Registered Blueprints
+            </span>
+            <span className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1.5 rounded-lg font-mono font-bold flex items-center gap-1">
+              <Zap className="w-3.5 h-3.5 text-emerald-600" />
+              RRF Active (k={rrfKConstant})
+            </span>
+          </div>
         </div>
       </div>
 
@@ -194,13 +284,18 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
         {/* Left 2 Columns: Advanced Filters & Cards/Table List */}
         <div className="xl:col-span-2 space-y-4">
           
-          {/* Advanced Filtering & Tagging Console */}
+          {/* Advanced Filtering & Hybrid Search Console */}
           <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-4 space-y-3">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-              <span className="text-xs font-semibold text-slate-700 font-sans flex items-center gap-2">
+              <div className="flex items-center gap-2">
                 <SlidersHorizontal className="w-4 h-4 text-emerald-500" />
-                Advanced Metadata Filter Engine
-              </span>
+                <span className="text-xs font-semibold text-slate-700 font-sans">
+                  Hybrid Search & Metadata Filters
+                </span>
+                <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded font-mono font-bold">
+                  RRF Algorithm
+                </span>
+              </div>
               <div className="flex items-center gap-2">
                 {isFilterActive && (
                   <button
@@ -215,10 +310,101 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
                   onClick={() => setIsFiltersExpanded(!isFiltersExpanded)}
                   className="text-xs text-slate-400 hover:text-slate-600 font-medium font-sans cursor-pointer"
                 >
-                  {isFiltersExpanded ? 'Collapse Engine' : 'Expand Filters'}
+                  {isFiltersExpanded ? 'Collapse Filters' : 'Expand Filters'}
                 </button>
               </div>
             </div>
+
+            {/* Search Mode Selector (Hybrid RRF / Lexical / Semantic) */}
+            <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-50 p-2 rounded-lg border border-slate-200 text-xs">
+              <div className="flex items-center gap-1.5 font-mono text-[11px]">
+                <span className="text-slate-500 font-bold uppercase tracking-wider text-[10px]">Search Mode:</span>
+                <div className="flex bg-white p-0.5 rounded-lg border border-slate-200 shadow-2xs">
+                  <button
+                    type="button"
+                    onClick={() => setSearchMode('hybrid')}
+                    className={`px-2.5 py-1 rounded-md transition-all flex items-center gap-1.5 font-semibold text-[11px] cursor-pointer ${
+                      searchMode === 'hybrid'
+                        ? 'bg-emerald-600 text-white shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    <Zap className="w-3 h-3" />
+                    <span>Hybrid (RRF)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSearchMode('lexical')}
+                    className={`px-2.5 py-1 rounded-md transition-all flex items-center gap-1.5 font-semibold text-[11px] cursor-pointer ${
+                      searchMode === 'lexical'
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    <Binary className="w-3 h-3" />
+                    <span>Lexical (BM25)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSearchMode('semantic')}
+                    className={`px-2.5 py-1 rounded-md transition-all flex items-center gap-1.5 font-semibold text-[11px] cursor-pointer ${
+                      searchMode === 'semantic'
+                        ? 'bg-purple-600 text-white shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    <Cpu className="w-3 h-3" />
+                    <span>Semantic (Dense)</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* RRF K-Constant Tuner */}
+              <div className="flex items-center gap-2 font-mono text-[11px]">
+                <span className="text-slate-400 text-[10px]">RRF Smoothing (k):</span>
+                <select
+                  value={rrfKConstant}
+                  onChange={(e) => setRrfKConstant(Number(e.target.value))}
+                  className="bg-white border border-slate-200 text-slate-700 font-bold px-2 py-0.5 rounded text-[11px] focus:outline-none focus:border-emerald-500 cursor-pointer"
+                >
+                  <option value={20}>k = 20 (High rank penalty)</option>
+                  <option value={40}>k = 40 (Aggressive)</option>
+                  <option value={60}>k = 60 (Industry Standard)</option>
+                  <option value={100}>k = 100 (Smooth decay)</option>
+                </select>
+
+                <button
+                  type="button"
+                  onClick={() => setShowRrfInspector(!showRrfInspector)}
+                  className={`p-1 rounded text-[11px] border cursor-pointer ${
+                    showRrfInspector ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-100'
+                  }`}
+                  title="Toggle RRF Mathematical Formula & Fusion Inspector"
+                >
+                  <Calculator className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+
+            {/* RRF Math Formula & Explanation Callout */}
+            {showRrfInspector && (
+              <div className="bg-slate-900 text-slate-200 p-3 rounded-lg border border-slate-800 text-xs font-mono space-y-1.5 animate-fade-in">
+                <div className="flex items-center justify-between text-emerald-400 font-bold text-[11px]">
+                  <span className="flex items-center gap-1.5">
+                    <Calculator className="w-3.5 h-3.5" />
+                    Reciprocal Rank Fusion Mathematical Formulation
+                  </span>
+                  <span className="text-slate-400 text-[10px]">Active k = {rrfKConstant}</span>
+                </div>
+                <p className="text-[11px] text-slate-300">
+                  <code className="text-emerald-300 font-bold">RRF_Score(d) = &sum; [ 1 / (k + rank_m(d)) ]</code> &nbsp;where m &isin; {'{ Lexical, Semantic }'}
+                </p>
+                <div className="text-[10px] text-slate-400 grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 border-t border-slate-800">
+                  <div>• <strong>Lexical:</strong> Matches exact identifiers, acronyms (`KUNNR`, `PIB`, `INV-99`), and column tokens.</div>
+                  <div>• <strong>Semantic:</strong> Captures concept synonyms (`customer` &harr; `kupac`, `invoice` &harr; `faktura`).</div>
+                </div>
+              </div>
+            )}
 
             {/* Always visible core search row */}
             <div className="flex flex-col sm:flex-row gap-3">
@@ -226,7 +412,7 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
                 <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="Search catalog by asset name, descriptions, mappings, owner..."
+                  placeholder="Search by exact field (e.g. KUNNR, PIB), business concept (kupac, faktura), or system..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-9 pr-4 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-white font-sans"
@@ -238,7 +424,7 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setViewMode('grid')}
-                  className={`p-1.5 rounded-md transition-all flex items-center gap-1 text-xs font-semibold ${
+                  className={`p-1.5 rounded-md transition-all flex items-center gap-1 text-xs font-semibold cursor-pointer ${
                     viewMode === 'grid' 
                       ? 'bg-white text-slate-900 shadow-xs' 
                       : 'text-slate-500 hover:text-slate-800'
@@ -250,7 +436,7 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setViewMode('table')}
-                  className={`p-1.5 rounded-md transition-all flex items-center gap-1 text-xs font-semibold ${
+                  className={`p-1.5 rounded-md transition-all flex items-center gap-1 text-xs font-semibold cursor-pointer ${
                     viewMode === 'table' 
                       ? 'bg-white text-slate-900 shadow-xs' 
                       : 'text-slate-500 hover:text-slate-800'
@@ -356,8 +542,8 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
           {/* Cards Grid or Table view */}
           {viewMode === 'grid' ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredEntries.map((entry) => {
-                const isSelected = selectedEntry?.id === entry.id;
+              {filteredAndScoredEntries.map((entry) => {
+                const isSelected = selectedEntryId === entry.id;
                 const displayFit = entry.reuseFitScore <= 1.0
                   ? Math.round(entry.reuseFitScore * 100)
                   : Math.round(entry.reuseFitScore);
@@ -366,7 +552,7 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
                   <div
                     key={entry.id}
                     onClick={() => setSelectedEntryId(entry.id)}
-                    className={`border rounded-xl p-4 cursor-pointer transition-all flex flex-col justify-between min-h-[200px] bg-white ${
+                    className={`border rounded-xl p-4 cursor-pointer transition-all flex flex-col justify-between min-h-[220px] bg-white ${
                       isSelected 
                         ? 'border-emerald-500 ring-2 ring-emerald-500/10 shadow-md' 
                         : 'border-slate-200 hover:border-slate-300 shadow-sm hover:shadow-md'
@@ -374,13 +560,43 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
                   >
                     <div className="space-y-2.5">
                       <div className="flex justify-between items-start gap-2">
-                        <h3 className="text-xs font-semibold text-slate-800 font-sans line-clamp-1">{entry.name}</h3>
+                        <div className="space-y-0.5">
+                          <h3 className="text-xs font-semibold text-slate-800 font-sans line-clamp-1 flex items-center gap-1.5">
+                            {entry.rrfRank !== undefined && (
+                              <span className="shrink-0 px-1.5 py-0.2 rounded bg-slate-900 text-white font-mono text-[9px] font-bold">
+                                #{entry.rrfRank}
+                              </span>
+                            )}
+                            <span>{entry.name}</span>
+                          </h3>
+                        </div>
                         <span className="shrink-0 px-2 py-0.5 text-[9px] font-mono font-bold uppercase rounded bg-emerald-50 text-emerald-700 border border-emerald-100">
                           {entry.status}
                         </span>
                       </div>
                       <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed font-sans">{entry.description}</p>
                       
+                      {/* RRF Ranking Breakdown Badge (when searching) */}
+                      {searchTerm.trim() && entry.rrfScore !== undefined && (
+                        <div className="bg-slate-50 border border-slate-200 rounded p-1.5 font-mono text-[10px] space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-emerald-700 font-bold flex items-center gap-1">
+                              <Zap className="w-3 h-3 text-emerald-600" />
+                              RRF Score: {entry.rrfScore.toFixed(5)}
+                            </span>
+                            <span className="text-slate-400 text-[9px]">k={entry.breakdown?.k || rrfKConstant}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-slate-500 text-[9px]">
+                            <span className="bg-white px-1.5 py-0.2 rounded border border-slate-200">
+                              Lexical: <strong>#{entry.lexicalRank}</strong>
+                            </span>
+                            <span className="bg-white px-1.5 py-0.2 rounded border border-slate-200">
+                              Semantic: <strong>#{entry.semanticRank}</strong>
+                            </span>
+                          </div>
+                        </div>
+                      )}
+
                       {/* Tags inside the card */}
                       <div className="flex flex-wrap gap-1">
                         {(entry.tags || []).slice(0, 4).map((tag, i) => (
@@ -422,7 +638,7 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
                   </div>
                 );
               })}
-              {filteredEntries.length === 0 && (
+              {filteredAndScoredEntries.length === 0 && (
                 <div className="col-span-2 py-12 text-center text-slate-400 border border-dashed border-slate-200 rounded-xl bg-white space-y-2">
                   <Info className="w-8 h-8 text-slate-300 mx-auto" />
                   <p className="text-xs text-slate-500 font-semibold font-sans">No matching corporate blueprint matches current filters.</p>
@@ -437,17 +653,18 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-[10px] font-mono uppercase tracking-wider">
-                      <th className="py-2.5 px-4 font-semibold">Integration Asset</th>
+                      <th className="py-2.5 px-4 font-semibold">Rank & Asset</th>
                       <th className="py-2.5 px-4 font-semibold">Source &rarr; Target</th>
-                      <th className="py-2.5 px-4 font-semibold">Associated Tags</th>
+                      {searchTerm.trim() && <th className="py-2.5 px-4 font-semibold">RRF Score</th>}
+                      <th className="py-2.5 px-4 font-semibold">Tags</th>
                       <th className="py-2.5 px-4 font-semibold text-center">Fields</th>
                       <th className="py-2.5 px-4 font-semibold text-center">Reuse Fit</th>
                       <th className="py-2.5 px-4 font-semibold">Steward</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {filteredEntries.map((entry) => {
-                      const isSelected = selectedEntry?.id === entry.id;
+                    {filteredAndScoredEntries.map((entry) => {
+                      const isSelected = selectedEntryId === entry.id;
                       const displayFit = entry.reuseFitScore <= 1.0
                         ? Math.round(entry.reuseFitScore * 100)
                         : Math.round(entry.reuseFitScore);
@@ -464,10 +681,17 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
                         >
                           <td className="py-3 px-4">
                             <div className="space-y-0.5">
-                              <span className="font-semibold text-slate-800 font-sans group-hover:text-emerald-700 transition-colors">
-                                {entry.name}
-                              </span>
-                              <span className="text-[10px] text-slate-400 font-sans line-clamp-1 max-w-[240px]">
+                              <div className="flex items-center gap-1.5">
+                                {entry.rrfRank !== undefined && (
+                                  <span className="px-1.5 py-0.2 rounded bg-slate-900 text-white font-mono text-[9px] font-bold">
+                                    #{entry.rrfRank}
+                                  </span>
+                                )}
+                                <span className="font-semibold text-slate-800 font-sans group-hover:text-emerald-700 transition-colors">
+                                  {entry.name}
+                                </span>
+                              </div>
+                              <span className="text-[10px] text-slate-400 font-sans line-clamp-1 max-w-[220px]">
                                 {entry.description}
                               </span>
                             </div>
@@ -483,16 +707,29 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
                               </span>
                             </div>
                           </td>
+                          {searchTerm.trim() && (
+                            <td className="py-3 px-4 font-mono text-[10px]">
+                              {entry.rrfScore !== undefined ? (
+                                <div className="space-y-0.5">
+                                  <span className="text-emerald-700 font-bold">
+                                    {entry.rrfScore.toFixed(5)}
+                                  </span>
+                                  <div className="text-[9px] text-slate-400">
+                                    L:#{entry.lexicalRank} | S:#{entry.semanticRank}
+                                  </div>
+                                </div>
+                              ) : (
+                                <span className="text-slate-400">-</span>
+                              )}
+                            </td>
+                          )}
                           <td className="py-3 px-4">
-                            <div className="flex flex-wrap gap-1 max-w-[180px]">
+                            <div className="flex flex-wrap gap-1 max-w-[160px]">
                               {(entry.tags || []).slice(0, 3).map((tag, idx) => (
                                 <span key={idx} className="bg-slate-50 border border-slate-150 text-[9px] font-mono text-slate-500 px-1.5 py-0.2 rounded">
                                   {tag}
                                 </span>
                               ))}
-                              {(entry.tags || []).length > 3 && (
-                                <span className="text-[9px] text-slate-400 font-mono">+{entry.tags!.length - 3}</span>
-                              )}
                             </div>
                           </td>
                           <td className="py-3 px-4 text-center font-mono text-slate-500">
@@ -515,9 +752,9 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
                         </tr>
                       );
                     })}
-                    {filteredEntries.length === 0 && (
+                    {filteredAndScoredEntries.length === 0 && (
                       <tr>
-                        <td colSpan={6} className="py-12 text-center text-slate-400 font-sans">
+                        <td colSpan={7} className="py-12 text-center text-slate-400 font-sans">
                           No matching assets found. Try adjusting your search query.
                         </td>
                       </tr>
@@ -529,23 +766,61 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
           )}
         </div>
 
-        {/* Right 1 Column: Selected Catalog Entry Detail & Dynamic Tagging */}
+        {/* Right 1 Column: Selected Catalog Entry Detail & RRF Breakdown Inspector */}
         <div>
-          {selectedEntry ? (
+          {selectedScoredEntry ? (
             <div className="bg-slate-900 text-slate-100 rounded-xl p-5 shadow-sm space-y-4">
               <div className="border-b border-slate-800 pb-3 space-y-1">
                 <div className="flex items-center justify-between">
                   <span className="text-[9px] font-mono font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-900 px-2 py-0.5 rounded uppercase">
-                    {selectedEntry.status}
+                    {selectedScoredEntry.status}
                   </span>
-                  <span className="text-[10px] text-slate-500 font-mono">ID: {selectedEntry.id}</span>
+                  <span className="text-[10px] text-slate-500 font-mono">ID: {selectedScoredEntry.id}</span>
                 </div>
-                <h3 className="text-sm font-bold text-white font-sans mt-1.5">{selectedEntry.name}</h3>
+                <h3 className="text-sm font-bold text-white font-sans mt-1.5">{selectedScoredEntry.name}</h3>
                 <div className="flex items-center gap-1 text-[11px] text-slate-400">
                   <User className="w-3 h-3 text-slate-500" />
-                  <span>Steward: {selectedEntry.owner}</span>
+                  <span>Steward: {selectedScoredEntry.owner}</span>
                 </div>
               </div>
+
+              {/* RRF Mathematical Rank Breakdown Card (if search is active) */}
+              {searchTerm.trim() && selectedScoredEntry.rrfScore !== undefined && (
+                <div className="bg-slate-950 border border-emerald-900/60 rounded-lg p-3 space-y-2 font-mono text-xs">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
+                    <span className="text-emerald-400 font-bold flex items-center gap-1 text-[11px]">
+                      <Zap className="w-3.5 h-3.5" />
+                      RRF Rank Diagnostic Breakdown
+                    </span>
+                    <span className="text-white bg-slate-800 px-2 py-0.5 rounded text-[10px]">
+                      Rank #{selectedScoredEntry.rrfRank}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-[10px] pt-1">
+                    <div className="bg-slate-900 p-2 rounded border border-slate-800 space-y-0.5">
+                      <div className="text-slate-400">Lexical BM25 Rank</div>
+                      <div className="text-blue-400 font-bold text-xs">#{selectedScoredEntry.lexicalRank}</div>
+                      <div className="text-slate-500 text-[9px]">
+                        Contrib: +{selectedScoredEntry.breakdown?.lexicalContrib.toFixed(5)}
+                      </div>
+                    </div>
+
+                    <div className="bg-slate-900 p-2 rounded border border-slate-800 space-y-0.5">
+                      <div className="text-slate-400">Semantic Concept Rank</div>
+                      <div className="text-purple-400 font-bold text-xs">#{selectedScoredEntry.semanticRank}</div>
+                      <div className="text-slate-500 text-[9px]">
+                        Contrib: +{selectedScoredEntry.breakdown?.semanticContrib.toFixed(5)}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-2 bg-emerald-950/40 rounded border border-emerald-800/40 text-[10px] text-emerald-300 flex items-center justify-between">
+                    <span>Combined Fused Score (k={rrfKConstant}):</span>
+                    <strong className="text-emerald-200">{selectedScoredEntry.rrfScore.toFixed(5)}</strong>
+                  </div>
+                </div>
+              )}
 
               {/* Dynamic Tag Management Subsystem */}
               <div className="space-y-2 bg-slate-800/20 border border-slate-800 p-3 rounded-lg">
@@ -554,11 +829,11 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
                     <Tag className="w-3 h-3 text-emerald-400" />
                     Asset Metadata Tags
                   </h4>
-                  <span className="text-[9px] text-slate-500 font-mono">{(selectedEntry.tags || []).length} assigned</span>
+                  <span className="text-[9px] text-slate-500 font-mono">{(selectedScoredEntry.tags || []).length} assigned</span>
                 </div>
                 
                 <div className="flex flex-wrap gap-1.5 pt-1">
-                  {(selectedEntry.tags || []).map((tag, idx) => (
+                  {(selectedScoredEntry.tags || []).map((tag, idx) => (
                     <span 
                       key={idx} 
                       className="group inline-flex items-center gap-1 bg-slate-800 hover:bg-slate-700/80 text-slate-300 hover:text-slate-100 px-2 py-0.5 rounded text-[10px] font-mono border border-slate-700 transition-all select-none"
@@ -567,7 +842,7 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
                       <button 
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleRemoveTag(selectedEntry.id, tag);
+                          handleRemoveTag(selectedScoredEntry.id, tag);
                         }}
                         className="text-slate-500 hover:text-rose-400 font-bold ml-1 focus:outline-none cursor-pointer"
                         title={`Remove tag "${tag}"`}
@@ -581,7 +856,7 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
                   <form 
                     onSubmit={(e) => {
                       e.preventDefault();
-                      handleAddTag(selectedEntry.id, newTagInput);
+                      handleAddTag(selectedScoredEntry.id, newTagInput);
                     }}
                     className="inline-flex items-center gap-1"
                   >
@@ -602,8 +877,8 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
               {/* Mappings preview inside catalog detail */}
               <div className="space-y-2">
                 <h4 className="text-[10px] font-semibold text-emerald-400 uppercase tracking-wider font-mono">Sample Fields Included</h4>
-                <div className="bg-slate-800/40 border border-slate-800 rounded-lg p-3 space-y-1.5">
-                  {selectedEntry.mappings.map((m, i) => (
+                <div className="bg-slate-800/40 border border-slate-800 rounded-lg p-3 space-y-1.5 max-h-[160px] overflow-y-auto">
+                  {selectedScoredEntry.mappings.map((m, i) => (
                     <div key={i} className="flex justify-between items-center text-xs font-mono">
                       <span className="text-slate-300">{m.source}</span>
                       <ArrowRight className="w-3 h-3 text-slate-500" />
@@ -620,9 +895,9 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
                 </h4>
                 
                 {(() => {
-                  const selectedFit = selectedEntry.reuseFitScore <= 1.0 
-                    ? Math.round(selectedEntry.reuseFitScore * 100) 
-                    : Math.round(selectedEntry.reuseFitScore);
+                  const selectedFit = selectedScoredEntry.reuseFitScore <= 1.0 
+                    ? Math.round(selectedScoredEntry.reuseFitScore * 100) 
+                    : Math.round(selectedScoredEntry.reuseFitScore);
                   return (
                     <div className="flex items-center gap-3">
                       <span className={`text-3xl font-bold font-mono leading-none ${
@@ -640,16 +915,16 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
 
                 <div className="bg-slate-800/60 p-3 rounded border-l-2 border-emerald-500">
                   <p className="text-[11px] text-slate-300 leading-normal font-sans">
-                    {selectedEntry.reuseExplanation}
+                    {selectedScoredEntry.reuseExplanation}
                   </p>
                 </div>
               </div>
 
               {/* Import Action */}
               <button
-                onClick={() => handleImport(selectedEntry)}
+                onClick={() => handleImport(selectedScoredEntry)}
                 disabled={isImporting}
-                className="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold py-2.5 px-4 rounded-lg text-xs flex items-center justify-center gap-1.5 transition-colors font-sans cursor-pointer"
+                className="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold py-2.5 px-4 rounded-lg text-xs flex items-center justify-center gap-1.5 transition-colors font-sans cursor-pointer shadow-sm"
               >
                 {isImporting ? (
                   <>
@@ -674,3 +949,4 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
     </div>
   );
 };
+

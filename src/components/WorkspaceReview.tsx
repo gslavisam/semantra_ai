@@ -134,13 +134,16 @@ export const WorkspaceReview: React.FC<WorkspaceReviewProps> = ({ mappings, setM
         if (row.confidence !== 'high') {
           const newSignals = Array.from(new Set([...row.signals, 'llm' as MappingSignal]));
           const newScore = Math.min(0.98, Number((row.score + 0.20).toFixed(2)));
+          const isAccepted = newScore >= 0.85;
           return {
             ...row,
             score: newScore,
             confidence: 'high' as Confidence,
             signals: newSignals,
+            decisionStatus: isAccepted ? 'accepted' : row.decisionStatus || 'needs_review',
+            isApproved: isAccepted ? true : row.isApproved,
             explanation: `${row.explanation} [AI Signal Generated: Multi-modal LLM reasoning verified field alignment.]`,
-            llmNotes: `Batch AI signal generated: Elevated confidence from ${row.confidence.toUpperCase()} to HIGH based on deep domain context.`
+            llmNotes: `Batch AI signal generated: Elevated confidence to HIGH (${Math.round(newScore * 100)}% score, auto-accepted threshold satisfied).`
           };
         }
         return row;
@@ -155,13 +158,16 @@ export const WorkspaceReview: React.FC<WorkspaceReviewProps> = ({ mappings, setM
       if (row.id === rowId) {
         const newSignals = Array.from(new Set([...row.signals, 'llm' as MappingSignal]));
         const newScore = Math.min(0.98, Number((row.score + 0.20).toFixed(2)));
+        const isAccepted = newScore >= 0.85;
         return {
           ...row,
           score: newScore,
           confidence: 'high' as Confidence,
           signals: newSignals,
+          decisionStatus: isAccepted ? 'accepted' : row.decisionStatus || 'needs_review',
+          isApproved: isAccepted ? true : row.isApproved,
           explanation: `${row.explanation} [AI Signal Generated: Single-field LLM verified semantic fit.]`,
-          llmNotes: 'AI signal generated: Contextual schema semantics validated.'
+          llmNotes: `AI signal generated: Contextual schema semantics validated (${Math.round(newScore * 100)}% score, auto-accepted).`
         };
       }
       return row;
@@ -342,14 +348,19 @@ export const WorkspaceReview: React.FC<WorkspaceReviewProps> = ({ mappings, setM
             updatedExplanation = `Refined based on user instruction: "${rawPrompt}". Generated Python transformation rule and updated schema mappings.`;
           }
 
+          const finalScore = Number(updatedScore.toFixed(2));
+          const isAccepted = finalScore >= 0.85;
+
           return {
             ...row,
             targetField: updatedTarget,
             transformation: generatedTransformation,
             transformationCode: generatedTransformation,
             explanation: updatedExplanation,
-            score: Number(updatedScore.toFixed(2)),
+            score: finalScore,
             confidence: updatedConfidence,
+            decisionStatus: isAccepted ? 'accepted' : row.decisionStatus || 'needs_review',
+            isApproved: isAccepted ? true : row.isApproved,
             signals: Array.from(new Set([...row.signals, 'llm' as MappingSignal, 'correction' as MappingSignal])),
             llmNotes: `Refined target: ${updatedTarget}. Generated Python transformation: ${generatedTransformation}`
           };
@@ -587,21 +598,26 @@ export const WorkspaceReview: React.FC<WorkspaceReviewProps> = ({ mappings, setM
                                 {/* Decision Status Dropdown */}
                                 <div className="flex items-center gap-1">
                                   <span className="text-[10px] font-mono text-slate-400 uppercase">Status:</span>
-                                  <select
-                                    value={row.decisionStatus || (row.isApproved ? 'accepted' : 'needs_review')}
-                                    onChange={(e) => handleDecisionStatusChange(row.id, e.target.value as DecisionStatus)}
-                                    className={`text-xs font-semibold px-2.5 py-1 rounded-lg border focus:outline-none transition-colors cursor-pointer font-sans ${
-                                      (row.decisionStatus === 'accepted' || (!row.decisionStatus && row.isApproved))
-                                        ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
-                                        : row.decisionStatus === 'rejected'
-                                        ? 'bg-rose-50 text-rose-800 border-rose-300'
-                                        : 'bg-amber-50 text-amber-800 border-amber-300'
-                                    }`}
-                                  >
-                                    <option value="accepted">accepted</option>
-                                    <option value="needs_review">needs_review</option>
-                                    <option value="rejected">rejected</option>
-                                  </select>
+                                  {(() => {
+                                    const currentStatus = row.decisionStatus || ((row.score >= 0.85 || row.isApproved) ? 'accepted' : 'needs_review');
+                                    return (
+                                      <select
+                                        value={currentStatus}
+                                        onChange={(e) => handleDecisionStatusChange(row.id, e.target.value as DecisionStatus)}
+                                        className={`text-xs font-semibold px-2.5 py-1 rounded-lg border focus:outline-none transition-colors cursor-pointer font-sans ${
+                                          currentStatus === 'accepted'
+                                            ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                                            : currentStatus === 'rejected'
+                                            ? 'bg-rose-50 text-rose-800 border-rose-300'
+                                            : 'bg-amber-50 text-amber-800 border-amber-300'
+                                        }`}
+                                      >
+                                        <option value="accepted">accepted</option>
+                                        <option value="needs_review">needs_review</option>
+                                        <option value="rejected">rejected</option>
+                                      </select>
+                                    );
+                                  })()}
                                 </div>
 
                                 {/* Mapping Type Dropdown */}
@@ -730,10 +746,22 @@ export const WorkspaceReview: React.FC<WorkspaceReviewProps> = ({ mappings, setM
                                     <div><strong className="text-slate-400">Transformation:</strong> <span className="text-emerald-400">{reasoning.transformation}</span></div>
                                     <div><strong className="text-slate-400">Decision type:</strong> <span className="text-indigo-300 font-bold">{reasoning.decisionType}</span></div>
                                     <div className="pt-1.5 font-bold text-white border-t border-slate-800/80">Reasoning:</div>
-                                    <ul className="list-disc list-inside space-y-1 text-slate-300 text-[11px] leading-relaxed pl-1">
-                                      {reasoning.reasoningBullets.map((bullet, idx) => (
-                                        <li key={idx} className="break-words text-slate-300">{bullet}</li>
-                                      ))}
+                                    <ul className="list-disc list-inside space-y-1.5 text-slate-300 text-[11px] leading-relaxed pl-1">
+                                      {reasoning.reasoningBullets.map((bullet, idx) => {
+                                        const isRrf = bullet.startsWith('Hybrid RRF Fusion:');
+                                        return (
+                                          <li key={idx} className={`break-words ${isRrf ? 'text-emerald-300 font-semibold list-none -ml-1 bg-emerald-950/40 p-1.5 rounded border border-emerald-800/50 flex items-start gap-1.5' : 'text-slate-300'}`}>
+                                            {isRrf ? (
+                                              <>
+                                                <span className="text-emerald-400 font-bold shrink-0">⚡</span>
+                                                <span>{bullet}</span>
+                                              </>
+                                            ) : (
+                                              bullet
+                                            )}
+                                          </li>
+                                        );
+                                      })}
                                     </ul>
                                   </div>
 

@@ -28,9 +28,23 @@ import {
   GitPullRequest,
   TrendingUp,
   Plus,
-  Play
+  Play,
+  AlertTriangle,
+  History,
+  Clock,
+  Lock,
+  FileDown,
+  ArrowRight,
+  CheckCheck
 } from 'lucide-react';
-import { CanonicalConcept, StewardshipItem, KnowledgeConcept } from '../types';
+import { 
+  CanonicalConcept, 
+  StewardshipItem, 
+  KnowledgeConcept,
+  BranchDefinition,
+  MergeConflictItem,
+  StewardshipAuditRecord
+} from '../types';
 import { KNOWLEDGE_CONCEPTS as DEFAULT_KNOWLEDGE_CONCEPTS } from '../data/mockData';
 
 interface OverlayRule {
@@ -58,7 +72,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
   stewardshipItems,
   setStewardshipItems
 }) => {
-  const [activeSection, setActiveSection] = useState<'Canonical' | 'Knowledge' | 'Overlays & Runtime' | 'Stewardship'>('Canonical');
+  const [activeSection, setActiveSection] = useState<'Canonical' | 'Knowledge' | 'Overlays & Runtime' | 'Stewardship' | 'Audit Trail'>('Canonical');
   const [conceptSearch, setConceptSearch] = useState('');
   const [conceptFocus, setConceptFocus] = useState('All concepts');
   const [selectedSourceSystem, setSelectedSourceSystem] = useState('All source systems');
@@ -67,25 +81,20 @@ export const AdminView: React.FC<AdminViewProps> = ({
 
   // Branching & Draft Overlays State for Canonical Dictionary
   const [activeBranch, setActiveBranch] = useState<string>('main');
-  const [branchesList, setBranchesList] = useState<Array<{
-    id: string;
-    name: string;
-    description: string;
-    author: string;
-    status: 'production' | 'draft_overlay' | 'staging';
-    pendingChangesCount: number;
-    benchmarkDeltaPct: number;
-    lastUpdated: string;
-  }>>([
+  const [branchesList, setBranchesList] = useState<BranchDefinition[]>([
     {
       id: 'main',
       name: 'main',
       description: 'Production Canonical Business Model (v1.2)',
       author: 'Data Stewardship Board',
       status: 'production',
+      baseBranch: 'main',
       pendingChangesCount: 0,
       benchmarkDeltaPct: 0.0,
-      lastUpdated: '2026-07-28 14:20'
+      lastUpdated: '2026-08-20 14:20',
+      commitHash: 'c7a91f2',
+      stagedRules: [],
+      conceptOverrides: {}
     },
     {
       id: 'draft/v1.3-procurement',
@@ -93,9 +102,30 @@ export const AdminView: React.FC<AdminViewProps> = ({
       description: 'Draft Overlay: SAP PIR & Supplier Master Alias Standardization',
       author: 'Slaviša M. (Lead Steward)',
       status: 'draft_overlay',
+      baseBranch: 'main',
       pendingChangesCount: 4,
       benchmarkDeltaPct: +3.8,
-      lastUpdated: '2026-07-30 11:45'
+      lastUpdated: '2026-08-22 11:45',
+      commitHash: 'b4e82d1',
+      stagedRules: [
+        {
+          id: 'rule_pir_1',
+          source_system: 'SAP S/4HANA',
+          source_field: 'EINA-INFNR',
+          target_canonical_concept: 'purchasing_info_record_id',
+          override_type: 'alias_promotion',
+          steward: 'Slaviša M.',
+          status: 'active',
+          created_at: '2026-08-22',
+          notes: 'Promote EINA Purchasing Info Record to Canonical Key'
+        }
+      ],
+      conceptOverrides: {
+        'supplier_id': {
+          data_type: 'VARCHAR(32)',
+          base_aliases: 'LIFNR, VendorId, SupplierCode, LFA1_LIFNR, EKKO_LIFNR, GlobalVendorCode'
+        }
+      }
     },
     {
       id: 'draft/sap-customer-overlay',
@@ -103,37 +133,116 @@ export const AdminView: React.FC<AdminViewProps> = ({
       description: 'Draft Overlay: KUNNR & Sales Org Canonical Taxonomy Boost',
       author: 'Ana K. (Data Architect)',
       status: 'draft_overlay',
+      baseBranch: 'main',
       pendingChangesCount: 2,
       benchmarkDeltaPct: +1.5,
-      lastUpdated: '2026-07-29 16:10'
+      lastUpdated: '2026-08-21 16:10',
+      commitHash: 'e9182ac',
+      stagedRules: [],
+      conceptOverrides: {
+        'customer_id': {
+          base_aliases: 'KUNNR, CustomerCode, CustID, KNA1_KUNNR, SoldToParty, DebtorAccount'
+        }
+      }
     }
   ]);
 
   const [isCreateBranchModalOpen, setIsCreateBranchModalOpen] = useState(false);
   const [newBranchName, setNewBranchName] = useState('');
   const [newBranchDesc, setNewBranchDesc] = useState('');
+  const [newBranchBase, setNewBranchBase] = useState('main');
   const [isTestingBenchmark, setIsTestingBenchmark] = useState(false);
   const [branchNoticeMessage, setBranchNoticeMessage] = useState<string | null>(null);
+
+  // 3-Way Merge Conflict Resolution Wizard State
+  const [isMergeConflictModalOpen, setIsMergeConflictModalOpen] = useState(false);
+  const [activeConflicts, setActiveConflicts] = useState<MergeConflictItem[]>([]);
+  const [mergeCommitMessage, setMergeCommitMessage] = useState('');
+  const [mergeIdempotencyKey, setMergeIdempotencyKey] = useState('');
+  const [isMergingExecution, setIsMergingExecution] = useState(false);
+
+  // Audit Logs State
+  const [auditLogs, setAuditLogs] = useState<StewardshipAuditRecord[]>([
+    {
+      id: 'audit_init_1',
+      timestamp: '2026-08-20 14:20:11',
+      stewardName: 'Data Stewardship Board',
+      actionType: 'overlay_promoted',
+      branchName: 'main',
+      targetEntity: 'Customer Master',
+      details: 'Promoted base SAP S/4HANA KUNNR alias mapping to canonical v1.2 index',
+      idempotencyKey: 'IDEMP-INIT-PROD-001',
+      commitHash: 'c7a91f2',
+      status: 'committed'
+    },
+    {
+      id: 'audit_init_2',
+      timestamp: '2026-08-21 09:15:34',
+      stewardName: 'Ana K. (Data Architect)',
+      actionType: 'branch_created',
+      branchName: 'draft/sap-customer-overlay',
+      targetEntity: 'Customer / Sales Org',
+      details: 'Created isolated draft overlay branch for sales org taxonomies and KUNNR expansion',
+      idempotencyKey: 'IDEMP-BR-CREATE-9921',
+      commitHash: 'e9182ac',
+      status: 'committed'
+    },
+    {
+      id: 'audit_init_3',
+      timestamp: '2026-08-22 08:30:00',
+      stewardName: 'Slaviša M. (Lead Steward)',
+      actionType: 'branch_created',
+      branchName: 'draft/v1.3-procurement',
+      targetEntity: 'Supplier / Material / PIR',
+      details: 'Initiated draft procurement branch with SAP PIR and vendor master overlays',
+      idempotencyKey: 'IDEMP-BR-CREATE-8812',
+      commitHash: 'b4e82d1',
+      status: 'committed'
+    }
+  ]);
+  const [auditSearch, setAuditSearch] = useState('');
+  const [auditFilterAction, setAuditFilterAction] = useState('all');
 
   const handleCreateBranch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newBranchName.trim()) return;
     const formattedName = newBranchName.startsWith('draft/') ? newBranchName.trim() : `draft/${newBranchName.trim()}`;
-    const newB = {
+    const hash = Math.random().toString(36).substring(2, 9);
+    const newB: BranchDefinition = {
       id: formattedName,
       name: formattedName,
       description: newBranchDesc.trim() || 'Custom Draft Overlay Branch',
       author: 'Data Steward (You)',
-      status: 'draft_overlay' as const,
+      status: 'draft_overlay',
+      baseBranch: newBranchBase,
       pendingChangesCount: 1,
       benchmarkDeltaPct: +0.8,
-      lastUpdated: new Date().toISOString().slice(0, 16).replace('T', ' ')
+      lastUpdated: new Date().toISOString().slice(0, 16).replace('T', ' '),
+      commitHash: hash,
+      stagedRules: [],
+      conceptOverrides: {}
     };
     setBranchesList(prev => [...prev, newB]);
     setActiveBranch(formattedName);
     setIsCreateBranchModalOpen(false);
     setNewBranchName('');
     setNewBranchDesc('');
+    
+    // Record audit
+    const auditRec: StewardshipAuditRecord = {
+      id: `audit_${Date.now()}`,
+      timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19),
+      stewardName: 'Data Steward (You)',
+      actionType: 'branch_created',
+      branchName: formattedName,
+      targetEntity: 'Canonical Model',
+      details: `Created new draft overlay branch from base "${newBranchBase}"`,
+      idempotencyKey: `IDEMP-BR-NEW-${hash.toUpperCase()}`,
+      commitHash: hash,
+      status: 'committed'
+    };
+    setAuditLogs(prev => [auditRec, ...prev]);
+
     setBranchNoticeMessage(`Created new Draft Overlay Branch "${formattedName}". Ready for benchmark testing and rule staging.`);
     setTimeout(() => setBranchNoticeMessage(null), 5000);
   };
@@ -147,13 +256,154 @@ export const AdminView: React.FC<AdminViewProps> = ({
     }, 1200);
   };
 
-  const handleMergeBranch = () => {
+  // Open 3-Way Merge Conflict Resolution Wizard
+  const handleOpenMergeWizard = () => {
     if (activeBranch === 'main') return;
-    const branchName = activeBranch;
-    setBranchesList(prev => prev.filter(b => b.id !== branchName));
-    setActiveBranch('main');
-    setBranchNoticeMessage(`Successfully merged & promoted draft overlay branch "${branchName}" into main production canonical model!`);
-    setTimeout(() => setBranchNoticeMessage(null), 6000);
+    const branch = branchesList.find(b => b.id === activeBranch);
+    if (!branch) return;
+
+    // Generate realistic, tangible merge conflicts based on branch
+    let generatedConflicts: MergeConflictItem[] = [];
+
+    if (activeBranch.includes('procurement')) {
+      generatedConflicts = [
+        {
+          id: 'conflict_proc_1',
+          conceptId: 'supplier_id',
+          conceptDisplayName: 'Supplier Master (supplier_id)',
+          propertyKey: 'data_type',
+          propertyLabel: 'Data Type Definition',
+          mainValue: 'VARCHAR(10)',
+          incomingValue: 'VARCHAR(32)',
+          conflictDescription: 'Main production restricts vendor numbers to 10 chars. Draft branch expands to 32 chars for international BP format.',
+          resolution: 'accept_incoming',
+          resolved: true
+        },
+        {
+          id: 'conflict_proc_2',
+          conceptId: 'supplier_id',
+          conceptDisplayName: 'Supplier Master (supplier_id)',
+          propertyKey: 'base_aliases',
+          propertyLabel: 'Base Synonym Aliases',
+          mainValue: 'LIFNR, VendorId, SupplierCode',
+          incomingValue: 'LIFNR, VendorId, SupplierCode, LFA1_LIFNR, EKKO_LIFNR, GlobalVendorCode',
+          conflictDescription: 'Incoming branch appends explicit SAP table prefixes (LFA1, EKKO) and GlobalVendorCode to dictionary.',
+          resolution: 'accept_incoming',
+          resolved: true
+        },
+        {
+          id: 'conflict_proc_3',
+          conceptId: 'tax_id',
+          conceptDisplayName: 'Tax Identification Number (tax_id)',
+          propertyKey: 'source_systems',
+          propertyLabel: 'Associated Source Systems',
+          mainValue: 'SAP, Oracle EBS',
+          incomingValue: 'SAP, Oracle EBS, Workday, Coupa Procurement',
+          conflictDescription: 'Draft branch links Coupa & Workday procurement source systems to canonical tax concept.',
+          resolution: 'accept_incoming',
+          resolved: true
+        }
+      ];
+    } else {
+      generatedConflicts = [
+        {
+          id: 'conflict_cust_1',
+          conceptId: 'customer_id',
+          conceptDisplayName: 'Customer Master (customer_id)',
+          propertyKey: 'base_aliases',
+          propertyLabel: 'Base Synonym Aliases',
+          mainValue: 'KUNNR, CustomerCode, CustID',
+          incomingValue: 'KUNNR, CustomerCode, CustID, KNA1_KUNNR, SoldToParty, DebtorAccount',
+          conflictDescription: 'Incoming branch introduces CRM & SAP SoldToParty aliases.',
+          resolution: 'accept_incoming',
+          resolved: true
+        },
+        {
+          id: 'conflict_cust_2',
+          conceptId: 'sales_organization',
+          conceptDisplayName: 'Sales Organization (sales_org)',
+          propertyKey: 'data_type',
+          propertyLabel: 'Data Type Definition',
+          mainValue: 'VARCHAR(4)',
+          incomingValue: 'VARCHAR(10)',
+          conflictDescription: 'Main restricts sales org to standard 4-char SAP code. Draft expands to 10 chars for multi-subsidiary mapping.',
+          resolution: 'accept_incoming',
+          resolved: true
+        }
+      ];
+    }
+
+    setActiveConflicts(generatedConflicts);
+    setMergeCommitMessage(`Merge draft branch "${activeBranch}" into main production with resolved overlay invariants`);
+    setMergeIdempotencyKey(`IDEMP-MERGE-${Math.random().toString(36).substring(2, 9).toUpperCase()}`);
+    setIsMergeConflictModalOpen(true);
+  };
+
+  // Change individual conflict resolution
+  const handleSetConflictResolution = (conflictId: string, resolution: 'keep_main' | 'accept_incoming' | 'custom', customVal?: any) => {
+    setActiveConflicts(prev => prev.map(c => {
+      if (c.id === conflictId) {
+        return {
+          ...c,
+          resolution,
+          customValue: customVal !== undefined ? customVal : c.customValue,
+          resolved: true
+        };
+      }
+      return c;
+    }));
+  };
+
+  // Execute Idempotent Merge Commit
+  const handleExecuteMergeCommit = () => {
+    setIsMergingExecution(true);
+    const branchToMerge = activeBranch;
+    const commitHash = `commit-${Math.random().toString(36).substring(2, 8)}`;
+    const timestamp = new Date().toISOString().replace('T', ' ').slice(0, 19);
+
+    setTimeout(() => {
+      // 1. Apply resolutions to canonicalConcepts
+      setCanonicalConcepts(prev => prev.map(concept => {
+        const matchingConflicts = activeConflicts.filter(c => c.conceptId === concept.concept_id || c.conceptId === concept.id);
+        if (matchingConflicts.length === 0) return concept;
+
+        let updated = { ...concept };
+        matchingConflicts.forEach(conf => {
+          const finalVal = conf.resolution === 'accept_incoming' 
+            ? conf.incomingValue 
+            : conf.resolution === 'custom' 
+              ? conf.customValue 
+              : conf.mainValue;
+          
+          (updated as any)[conf.propertyKey] = finalVal;
+        });
+        return updated;
+      }));
+
+      // 2. Remove draft branch from list & switch to main
+      setBranchesList(prev => prev.filter(b => b.id !== branchToMerge));
+      setActiveBranch('main');
+
+      // 3. Record in Audit Log
+      const newAuditRecord: StewardshipAuditRecord = {
+        id: `audit_${Date.now()}`,
+        timestamp,
+        stewardName: 'Data Steward (Slaviša M.)',
+        actionType: 'branch_merged',
+        branchName: branchToMerge,
+        targetEntity: 'Production Canonical Glossary (v1.3)',
+        details: `${mergeCommitMessage} (${activeConflicts.length} conflicts resolved). Idempotency Key: ${mergeIdempotencyKey}`,
+        idempotencyKey: mergeIdempotencyKey,
+        commitHash,
+        status: 'committed'
+      };
+      setAuditLogs(prev => [newAuditRecord, ...prev]);
+
+      setIsMergingExecution(false);
+      setIsMergeConflictModalOpen(false);
+      setBranchNoticeMessage(`Successfully executed 3-way merge of "${branchToMerge}" into main production! Commit: ${commitHash} [${mergeIdempotencyKey}]`);
+      setTimeout(() => setBranchNoticeMessage(null), 7000);
+    }, 900);
   };
   
   // Knowledge state
@@ -529,7 +779,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
       <div className="space-y-2 border-t border-slate-200 pt-4">
         <span className="text-[11px] font-mono text-slate-500 font-semibold block">Governance section</span>
         <div className="flex flex-wrap items-center gap-6 text-xs font-mono">
-          {(['Canonical', 'Knowledge', 'Overlays & Runtime', 'Stewardship'] as const).map((sec) => (
+          {(['Canonical', 'Knowledge', 'Overlays & Runtime', 'Stewardship', 'Audit Trail'] as const).map((sec) => (
             <label key={sec} className="flex items-center gap-2 cursor-pointer text-slate-800 hover:text-indigo-600">
               <input
                 type="radio"
@@ -1408,8 +1658,8 @@ export const AdminView: React.FC<AdminViewProps> = ({
                 {activeBranch !== 'main' && (
                   <button
                     type="button"
-                    onClick={handleMergeBranch}
-                    className="flex-1 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition-colors shadow-sm"
+                    onClick={handleOpenMergeWizard}
+                    className="flex-1 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition-colors shadow-sm cursor-pointer"
                   >
                     <GitMerge className="w-3.5 h-3.5" />
                     <span>Merge to Main</span>
@@ -1545,6 +1795,346 @@ export const AdminView: React.FC<AdminViewProps> = ({
                   ))
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* SECTION 5: AUDIT TRAIL / REVIZORSKI DNEVNIK */}
+      {activeSection === 'Audit Trail' && (
+        <div className="space-y-6 pt-2 font-mono text-xs text-slate-200">
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm space-y-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <History className="w-5 h-5 text-indigo-400" />
+                  <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+                    Stewardship Governance &amp; Revizorski Dnevnik
+                  </h3>
+                  <span className="px-2 py-0.5 text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded font-bold">
+                    Immutable Audit Log
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 mt-1">
+                  Full cryptographic history of all branch creations, 3-way merges, conflict resolutions, and promoted overlay dictionaries.
+                </p>
+              </div>
+
+              {/* Export Audit Log Button */}
+              <button
+                onClick={() => {
+                  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(auditLogs, null, 2));
+                  const dlAnchor = document.createElement('a');
+                  dlAnchor.setAttribute("href", dataStr);
+                  dlAnchor.setAttribute("download", `semantra_stewardship_audit_${new Date().toISOString().slice(0, 10)}.json`);
+                  dlAnchor.click();
+                }}
+                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <FileDown className="w-4 h-4 text-emerald-400" />
+                <span>Export Audit Log (JSON)</span>
+              </button>
+            </div>
+
+            {/* Filter & Search Bar */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search audit records by steward, hash, idempotency key..."
+                  value={auditSearch}
+                  onChange={(e) => setAuditSearch(e.target.value)}
+                  className="w-full pl-9 pr-3 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div>
+                <select
+                  value={auditFilterAction}
+                  onChange={(e) => setAuditFilterAction(e.target.value)}
+                  className="w-full p-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                >
+                  <option value="all">All Action Types</option>
+                  <option value="branch_created">Branch Created</option>
+                  <option value="branch_merged">Branch Merged (3-Way)</option>
+                  <option value="conflict_resolved">Conflict Resolved</option>
+                  <option value="overlay_promoted">Overlay Promoted</option>
+                  <option value="decision_applied">Decision Applied</option>
+                </select>
+              </div>
+
+              <div className="flex items-center justify-end text-slate-400 text-xs gap-3">
+                <span>Total Audit Entries: <strong className="text-white">{auditLogs.length}</strong></span>
+                <span className="text-emerald-400 flex items-center gap-1">
+                  <ShieldCheck className="w-3.5 h-3.5" /> 100% Idempotent
+                </span>
+              </div>
+            </div>
+
+            {/* Audit Log Table */}
+            <div className="overflow-x-auto border border-slate-800 rounded-lg bg-slate-950 max-h-[500px] overflow-y-auto">
+              <table className="w-full text-left text-xs border-collapse min-w-[950px]">
+                <thead className="sticky top-0 bg-slate-900 border-b border-slate-800 z-10 text-slate-300">
+                  <tr>
+                    <th className="p-2.5 font-bold">Timestamp</th>
+                    <th className="p-2.5 font-bold">Steward / Actor</th>
+                    <th className="p-2.5 font-bold">Action Type</th>
+                    <th className="p-2.5 font-bold">Branch Name</th>
+                    <th className="p-2.5 font-bold">Target Entity</th>
+                    <th className="p-2.5 font-bold">Details &amp; Diff Summary</th>
+                    <th className="p-2.5 font-bold">Idempotency Key</th>
+                    <th className="p-2.5 font-bold">Commit Hash</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60 text-slate-300">
+                  {auditLogs
+                    .filter(rec => {
+                      const q = auditSearch.toLowerCase();
+                      const matchesQ = !q ||
+                        rec.stewardName.toLowerCase().includes(q) ||
+                        rec.branchName.toLowerCase().includes(q) ||
+                        rec.details.toLowerCase().includes(q) ||
+                        rec.idempotencyKey.toLowerCase().includes(q) ||
+                        rec.commitHash.toLowerCase().includes(q);
+                      const matchesAct = auditFilterAction === 'all' || rec.actionType === auditFilterAction;
+                      return matchesQ && matchesAct;
+                    })
+                    .map((rec) => (
+                      <tr key={rec.id} className="hover:bg-slate-900/80 transition-colors">
+                        <td className="p-2.5 text-slate-400 whitespace-nowrap text-[11px]">
+                          <div className="flex items-center gap-1.5">
+                            <Clock className="w-3 h-3 text-slate-500" />
+                            {rec.timestamp}
+                          </div>
+                        </td>
+                        <td className="p-2.5 font-bold text-slate-200 whitespace-nowrap">
+                          {rec.stewardName}
+                        </td>
+                        <td className="p-2.5 whitespace-nowrap">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
+                            rec.actionType === 'branch_merged'
+                              ? 'bg-purple-500/20 text-purple-300 border-purple-500/30'
+                              : rec.actionType === 'branch_created'
+                                ? 'bg-blue-500/20 text-blue-300 border-blue-500/30'
+                                : rec.actionType === 'overlay_promoted'
+                                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                                  : 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                          }`}>
+                            {rec.actionType.toUpperCase().replace('_', ' ')}
+                          </span>
+                        </td>
+                        <td className="p-2.5 text-emerald-400 font-bold whitespace-nowrap">
+                          {rec.branchName}
+                        </td>
+                        <td className="p-2.5 text-indigo-300 whitespace-nowrap">
+                          {rec.targetEntity}
+                        </td>
+                        <td className="p-2.5 text-slate-300 text-[11px] max-w-[320px] leading-relaxed">
+                          {rec.details}
+                        </td>
+                        <td className="p-2.5 font-mono text-[10px] text-amber-400 whitespace-nowrap">
+                          {rec.idempotencyKey}
+                        </td>
+                        <td className="p-2.5 font-mono text-[10px] text-slate-400 whitespace-nowrap">
+                          <span className="px-1.5 py-0.5 bg-slate-900 border border-slate-700 rounded text-slate-300">
+                            {rec.commitHash}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3-WAY MERGE CONFLICT RESOLUTION WIZARD MODAL */}
+      {isMergeConflictModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-xs p-4 animate-fade-in font-mono">
+          <div className="bg-slate-900 border-2 border-indigo-500/80 rounded-2xl max-w-4xl w-full p-6 space-y-5 shadow-2xl max-h-[90vh] flex flex-col">
+            
+            {/* Modal Header */}
+            <div className="flex items-start justify-between border-b border-slate-800 pb-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-1.5 bg-indigo-500/20 border border-indigo-500/40 rounded-lg">
+                    <GitMerge className="w-5 h-5 text-indigo-400" />
+                  </div>
+                  <h3 className="text-base font-bold text-white tracking-wide">
+                    3-Way Merge Conflict Resolution Wizard
+                  </h3>
+                  <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                    {activeConflicts.filter(c => !c.resolved).length === 0 ? 'All Conflicts Resolved' : `${activeConflicts.filter(c => !c.resolved).length} Unresolved`}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400">
+                  Merging incoming draft branch <strong className="text-emerald-400">{activeBranch}</strong> &rarr; base production <strong className="text-blue-400">main</strong>. Review side-by-side invariants and choose property resolution.
+                </p>
+              </div>
+
+              <button
+                onClick={() => setIsMergeConflictModalOpen(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Conflicts List */}
+            <div className="space-y-4 overflow-y-auto flex-1 pr-1">
+              {activeConflicts.map((conflict, idx) => (
+                <div 
+                  key={conflict.id}
+                  className="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-3 shadow-inner"
+                >
+                  {/* Conflict Header */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 pb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-full bg-indigo-950 text-indigo-400 border border-indigo-800 flex items-center justify-center text-[10px] font-bold">
+                        {idx + 1}
+                      </span>
+                      <span className="font-bold text-slate-100 text-xs">{conflict.conceptDisplayName}</span>
+                      <span className="text-slate-500">&bull;</span>
+                      <span className="text-indigo-400 font-bold text-[11px]">{conflict.propertyLabel}</span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] text-slate-400">Resolution:</span>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                        conflict.resolution === 'accept_incoming'
+                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                          : conflict.resolution === 'keep_main'
+                            ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                            : 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                      }`}>
+                        {conflict.resolution.replace('_', ' ')}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Context Rationale */}
+                  <p className="text-[11px] text-slate-400 leading-relaxed italic">
+                    "{conflict.conflictDescription}"
+                  </p>
+
+                  {/* Side-by-Side Diff Cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                    {/* Current Main Option */}
+                    <div className={`p-3 rounded-lg border transition-colors flex flex-col justify-between ${
+                      conflict.resolution === 'keep_main'
+                        ? 'bg-blue-950/40 border-blue-600 ring-1 ring-blue-500/60'
+                        : 'bg-slate-900/60 border-slate-800 hover:border-slate-700'
+                    }`}>
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between text-[10px] font-bold text-blue-400">
+                          <span>BASE MAIN (Production)</span>
+                          {conflict.resolution === 'keep_main' && <CheckCheck className="w-3.5 h-3.5 text-blue-400" />}
+                        </div>
+                        <div className="p-2 bg-slate-950 rounded border border-slate-800 text-slate-200 text-xs font-mono break-all select-all">
+                          {String(conflict.mainValue)}
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleSetConflictResolution(conflict.id, 'keep_main')}
+                        className={`mt-2.5 py-1.5 px-3 rounded text-[11px] font-bold transition-colors cursor-pointer ${
+                          conflict.resolution === 'keep_main'
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
+                        }`}
+                      >
+                        Keep Main Value
+                      </button>
+                    </div>
+
+                    {/* Incoming Draft Option */}
+                    <div className={`p-3 rounded-lg border transition-colors flex flex-col justify-between ${
+                      conflict.resolution === 'accept_incoming'
+                        ? 'bg-emerald-950/40 border-emerald-600 ring-1 ring-emerald-500/60'
+                        : 'bg-slate-900/60 border-slate-800 hover:border-slate-700'
+                    }`}>
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between text-[10px] font-bold text-emerald-400">
+                          <span>INCOMING DRAFT ({activeBranch})</span>
+                          {conflict.resolution === 'accept_incoming' && <CheckCheck className="w-3.5 h-3.5 text-emerald-400" />}
+                        </div>
+                        <div className="p-2 bg-slate-950 rounded border border-slate-800 text-emerald-200 text-xs font-mono break-all select-all font-semibold">
+                          {String(conflict.incomingValue)}
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleSetConflictResolution(conflict.id, 'accept_incoming')}
+                        className={`mt-2.5 py-1.5 px-3 rounded text-[11px] font-bold transition-colors cursor-pointer ${
+                          conflict.resolution === 'accept_incoming'
+                            ? 'bg-emerald-600 text-white shadow-sm'
+                            : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
+                        }`}
+                      >
+                        Accept Incoming Value
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Commit Footer with Idempotency Key & Action */}
+            <div className="border-t border-slate-800 pt-4 space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                <div className="space-y-1">
+                  <label className="text-[10px] text-slate-400 font-bold block">Merge Commit Rationale</label>
+                  <input
+                    type="text"
+                    value={mergeCommitMessage}
+                    onChange={(e) => setMergeCommitMessage(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 text-slate-100 px-3 py-1.5 rounded text-xs focus:outline-none focus:border-indigo-500 font-mono"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] text-slate-400 font-bold flex items-center gap-1">
+                    <Lock className="w-3 h-3 text-amber-400" /> Idempotency Transaction Key
+                  </label>
+                  <input
+                    type="text"
+                    value={mergeIdempotencyKey}
+                    readOnly
+                    className="w-full bg-slate-950 border border-slate-800 text-amber-300 font-mono px-3 py-1.5 rounded text-xs select-all"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-2">
+                <div className="flex items-center gap-2 text-slate-400 text-xs">
+                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                  <span>All resolutions will be permanently recorded in the <strong>Audit Trail</strong>.</span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsMergeConflictModalOpen(false)}
+                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-bold transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleExecuteMergeCommit}
+                    disabled={isMergingExecution}
+                    className="px-5 py-2 bg-gradient-to-r from-indigo-600 to-emerald-600 hover:from-indigo-500 hover:to-emerald-500 text-white rounded-lg text-xs font-bold flex items-center gap-2 transition-all shadow-md cursor-pointer disabled:opacity-50"
+                  >
+                    <GitCommit className={`w-4 h-4 ${isMergingExecution ? 'animate-spin' : ''}`} />
+                    <span>{isMergingExecution ? 'Executing Commit...' : 'Execute Idempotent 3-Way Merge'}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       )}

@@ -151,7 +151,15 @@ export default function App() {
   const [mappings, setMappings] = useState<MappingRow[]>(() => {
     try {
       const saved = localStorage.getItem(LOCAL_STORAGE_KEY_MAPPINGS);
-      return saved ? JSON.parse(saved) : [];
+      if (saved) {
+        const parsed: MappingRow[] = JSON.parse(saved);
+        return parsed.map(r => ({
+          ...r,
+          decisionStatus: r.decisionStatus || (r.score >= 0.85 ? 'accepted' : 'needs_review'),
+          isApproved: r.isApproved !== undefined ? r.isApproved : (r.score >= 0.85)
+        }));
+      }
+      return [];
     } catch { return []; }
   });
 
@@ -559,6 +567,13 @@ export default function App() {
       } else if (preset === 'generic_account_master') {
         seededRows = [...GENERIC_ACCOUNT_MASTER_MAPPINGS];
       }
+
+      // Ensure auto-accepted status for score >= 0.85
+      seededRows = seededRows.map(row => ({
+        ...row,
+        decisionStatus: row.decisionStatus || (row.score >= 0.85 ? 'accepted' : 'needs_review'),
+        isApproved: row.isApproved !== undefined ? row.isApproved : (row.score >= 0.85)
+      }));
 
       // If canonical mode, rewrite physical target field layout references to Virtual Concepts
       if (mode === 'canonical') {
