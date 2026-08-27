@@ -1538,13 +1538,13 @@ export function ContractReverseEngineeringView({ onImportToWorkspace }: Contract
   };
 
   return (
-    <div className="space-y-6 font-sans">
-      {/* Top Banner & Flow Header */}
-      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-xl p-6 border border-slate-800 shadow-lg relative overflow-hidden">
+    <div className="space-y-5 font-sans">
+      {/* Top Banner & Header */}
+      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-xl p-5 border border-slate-800 shadow-md relative overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
         
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <div className="flex items-center gap-2">
               <span className="px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[10px] font-mono font-bold uppercase tracking-wider flex items-center gap-1">
                 <Network className="w-3 h-3 text-indigo-400" />
@@ -1597,49 +1597,167 @@ export function ContractReverseEngineeringView({ onImportToWorkspace }: Contract
               </button>
             </div>
 
-            <label className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg border border-slate-700 transition-all flex items-center gap-1.5 cursor-pointer">
+            <label className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg border border-slate-700 transition-all flex items-center gap-1.5 cursor-pointer">
               <Upload className="w-3.5 h-3.5 text-slate-400" />
-              <span>Upload Custom Contract</span>
+              <span>Upload Contract</span>
               <input type="file" accept=".json,.xml,.yaml,.yml" onChange={handleFileUpload} className="hidden" />
             </label>
           </div>
         </div>
-
-        {/* 7-Step Pipeline Sub-Navigation Bar */}
-        <div className="mt-6 pt-5 border-t border-slate-800/80 flex flex-wrap items-center gap-2">
-          {[
-            { id: 'ingest_audit', label: '1. Contract Ingest & Health Audit', icon: ShieldCheck, badge: `${audit.score}% Score` },
-            { id: 'deconstruction', label: '2. Deconstruction & Pair Mapping', icon: Network, badge: `${entitiesList.length} Entities` },
-            { id: 'smart_graph', label: '3. Smart Graph & FK Relations', icon: GitBranch, badge: `${smartArtifacts.relationships.length} Relations` },
-            { id: 'assertions_sync', label: '4. Assertions Synchronization', icon: Shield, badge: `${constraintsList.filter(c => c.isSyncedToAssertion).length} Invariants` },
-            { id: 'canonical_synthesis', label: '5. Canonical Model Synthesis', icon: Layers, badge: `${getCanonicalProposals().length} Canonical Models` },
-            { id: 'refine_export', label: '6. Refined Contract & Export', icon: Code, badge: 'JSON / Code' },
-            { id: 'architecture_docs', label: '7. Architecture & BA Report', icon: FileText, badge: 'Diagram & BA' }
-          ].map((step) => {
-            const Icon = step.icon;
-            const isCurrent = activeStep === step.id;
-            return (
-              <button
-                key={step.id}
-                onClick={() => setActiveStep(step.id as ReverseEngineeringStep)}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer ${
-                  isCurrent
-                    ? 'bg-indigo-600 text-white shadow-md border border-indigo-400/30'
-                    : 'bg-slate-800/60 text-slate-300 hover:bg-slate-800 hover:text-white border border-slate-700/50'
-                }`}
-              >
-                <Icon className="w-3.5 h-3.5" />
-                <span>{step.label}</span>
-                <span className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-bold ${
-                  isCurrent ? 'bg-indigo-950 text-indigo-200' : 'bg-slate-900 text-slate-400'
-                }`}>
-                  {step.badge}
-                </span>
-              </button>
-            );
-          })}
-        </div>
       </div>
+
+      {/* Main Master-Detail Layout: Left Vertical Pipeline Stepper + Right Content Area */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* LEFT VERTICAL PIPELINE STEPPER */}
+        <div className="lg:col-span-4 xl:col-span-3 space-y-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-sm space-y-3">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2">
+                <GitBranch className="w-4 h-4 text-indigo-400" />
+                <span className="text-xs font-bold text-white uppercase tracking-wider font-mono">
+                  Pipeline Steps
+                </span>
+              </div>
+              <span className="text-[10px] font-mono font-bold px-2 py-0.5 bg-indigo-950 text-indigo-300 border border-indigo-500/30 rounded">
+                WF-13 Engine
+              </span>
+            </div>
+
+            <div className="space-y-1 relative">
+              {[
+                { 
+                  id: 'ingest_audit', 
+                  stepNum: 1,
+                  title: 'Contract Ingest & Audit', 
+                  sub: 'Structural health & null ratios',
+                  icon: ShieldCheck, 
+                  badge: `${audit.score}% Score`,
+                  badgeColor: audit.score >= 80 ? 'bg-emerald-950 text-emerald-300 border-emerald-500/30' : 'bg-amber-950 text-amber-300 border-amber-500/30'
+                },
+                { 
+                  id: 'deconstruction', 
+                  stepNum: 2,
+                  title: 'Payload Deconstruction', 
+                  sub: 'Entity & leaf pair matching',
+                  icon: Network, 
+                  badge: `${entitiesList.length} Entities`,
+                  badgeColor: 'bg-indigo-950 text-indigo-300 border-indigo-500/30'
+                },
+                { 
+                  id: 'smart_graph', 
+                  stepNum: 3,
+                  title: 'Smart Graph & Relations', 
+                  sub: 'FK & cardinality discovery',
+                  icon: GitBranch, 
+                  badge: `${smartArtifacts.relationships.length} Relations`,
+                  badgeColor: 'bg-cyan-950 text-cyan-300 border-cyan-500/30'
+                },
+                { 
+                  id: 'assertions_sync', 
+                  stepNum: 4,
+                  title: 'Assertions Sync', 
+                  sub: 'Data quality invariants',
+                  icon: Shield, 
+                  badge: `${constraintsList.filter(c => c.isSyncedToAssertion).length} Invariants`,
+                  badgeColor: 'bg-amber-950 text-amber-300 border-amber-500/30'
+                },
+                { 
+                  id: 'canonical_synthesis', 
+                  stepNum: 5,
+                  title: 'Canonical Synthesis', 
+                  sub: 'JSON Schema domain models',
+                  icon: Layers, 
+                  badge: `${getCanonicalProposals().length} Models`,
+                  badgeColor: 'bg-purple-950 text-purple-300 border-purple-500/30'
+                },
+                { 
+                  id: 'refine_export', 
+                  stepNum: 6,
+                  title: 'Refined Contract & Export', 
+                  sub: 'SQL DDL & middleware code',
+                  icon: Code, 
+                  badge: 'JSON / Code',
+                  badgeColor: 'bg-blue-950 text-blue-300 border-blue-500/30'
+                },
+                { 
+                  id: 'architecture_docs', 
+                  stepNum: 7,
+                  title: 'Architecture & BA Report', 
+                  sub: 'Entity graphs & executive PDF',
+                  icon: FileText, 
+                  badge: 'Diagram & BA',
+                  badgeColor: 'bg-emerald-950 text-emerald-300 border-emerald-500/30'
+                }
+              ].map((step, idx, arr) => {
+                const Icon = step.icon;
+                const isCurrent = activeStep === step.id;
+                
+                return (
+                  <button
+                    key={step.id}
+                    onClick={() => setActiveStep(step.id as ReverseEngineeringStep)}
+                    className={`w-full text-left p-3 rounded-lg transition-all cursor-pointer flex items-start gap-3 relative group ${
+                      isCurrent
+                        ? 'bg-indigo-600/15 border border-indigo-500/50 shadow-xs'
+                        : 'hover:bg-slate-800/70 border border-transparent text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    {/* Left Step Circle Number */}
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold font-mono shrink-0 transition-colors ${
+                      isCurrent
+                        ? 'bg-indigo-600 text-white shadow-sm ring-2 ring-indigo-400/40'
+                        : 'bg-slate-800 text-slate-400 group-hover:bg-slate-700 group-hover:text-slate-200'
+                    }`}>
+                      {step.stepNum}
+                    </div>
+
+                    {/* Step Title, Subtitle & Badge */}
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <div className="flex items-center justify-between gap-1">
+                        <span className={`text-xs font-bold truncate ${
+                          isCurrent ? 'text-white' : 'text-slate-300 group-hover:text-white'
+                        }`}>
+                          {step.title}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-slate-400 truncate leading-tight">
+                        {step.sub}
+                      </p>
+                      <div className="pt-0.5">
+                        <span className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-mono font-bold border ${step.badgeColor}`}>
+                          {step.badge}
+                        </span>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Quick Context Summary Card in Sidebar */}
+          <div className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-4 space-y-2 text-xs font-mono">
+            <div className="flex justify-between items-center text-slate-400 text-[11px]">
+              <span>Active Contract:</span>
+              <strong className="text-indigo-300 uppercase">{contractObj.name || presetKey}</strong>
+            </div>
+            <div className="flex justify-between items-center text-slate-400 text-[11px]">
+              <span>Health Score:</span>
+              <strong className={audit.score >= 80 ? 'text-emerald-400' : 'text-amber-400'}>{audit.score}%</strong>
+            </div>
+            <div className="flex justify-between items-center text-slate-400 text-[11px]">
+              <span>Extracted Entities:</span>
+              <strong className="text-slate-200">{entitiesList.length}</strong>
+            </div>
+            <div className="flex justify-between items-center text-slate-400 text-[11px]">
+              <span>Inferred Relations:</span>
+              <strong className="text-cyan-400">{smartArtifacts.relationships.length} FKs</strong>
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT MAIN WORKSPACE CONTENT */}
+        <div className="lg:col-span-8 xl:col-span-9 min-w-0 space-y-6">
 
       {/* STEP 1: CONTRACT INGEST & HEALTH AUDIT */}
       {activeStep === 'ingest_audit' && (
@@ -2817,6 +2935,8 @@ ${smartArtifacts.relationships.map(r => `    assert_referential_integrity(
           </div>
         </div>
       )}
+        </div>
+      </div>
     </div>
   );
 

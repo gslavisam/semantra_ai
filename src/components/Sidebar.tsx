@@ -50,7 +50,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
           <div>
             <h1 className="font-sans font-bold text-lg text-white leading-none tracking-tight">Semantra</h1>
-            <span className="font-mono text-[10px] text-slate-500 uppercase tracking-widest">v1.2 Workbench</span>
+            <span className="font-mono text-[10px] text-slate-500 uppercase tracking-widest">v1.3 Workbench</span>
           </div>
         </div>
 

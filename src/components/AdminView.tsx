@@ -85,7 +85,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
     {
       id: 'main',
       name: 'main',
-      description: 'Production Canonical Business Model (v1.2)',
+      description: 'Production Canonical Business Model (v1.3)',
       author: 'Data Stewardship Board',
       status: 'production',
       baseBranch: 'main',

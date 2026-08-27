@@ -25,7 +25,8 @@ import {
   ChevronDown,
   ChevronRight,
   Info,
-  FileDown
+  FileDown,
+  Network
 } from 'lucide-react';
 import { MappingRow, AIModelConfig } from '../types';
 import { generateFieldReasoning } from '../lib/reasoning';
@@ -1169,7 +1170,44 @@ ${mappings.map(m => {
           )}
         </div>
 
-        {/* 13. Output Contract Summary */}
+        {/* 13. Data Lineage & OpenLineage Provenance (EU AI Act 2026 Conformance) */}
+        <div className="space-y-3 p-4 bg-slate-50 border border-slate-200 rounded-xl">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-bold text-slate-900 font-mono tracking-tight flex items-center gap-2">
+              <Network className="w-4 h-4 text-indigo-600" />
+              Data Lineage &amp; Provenance (OpenLineage Standard)
+            </h2>
+            <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-mono font-bold">
+              EU AI Act (2026) Compliant
+            </span>
+          </div>
+
+          <p className="text-xs text-slate-600 font-sans leading-relaxed">
+            Full digital provenance audit trail conforming to the open-source OpenLineage specification. All transformation facets, PII redactions, and source-to-target datasets are cryptographically bound for automated ingestion into Marquez, DataHub, or Apache Atlas.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
+            <div className="bg-white border border-slate-200 rounded-lg p-3 space-y-1">
+              <span className="text-[10px] font-mono uppercase text-slate-400 font-bold">Input Dataset Lineage</span>
+              <div className="text-xs font-bold text-slate-800 font-mono">sap.production.erp</div>
+              <div className="text-[11px] text-slate-500 font-mono">{presetInfo.source} ({totalFields} fields)</div>
+            </div>
+
+            <div className="bg-white border border-indigo-200 rounded-lg p-3 space-y-1">
+              <span className="text-[10px] font-mono uppercase text-indigo-500 font-bold">Lineage Facets &amp; Security</span>
+              <div className="text-xs font-bold text-indigo-700 font-mono">OpenLineage 1.0 Facets</div>
+              <div className="text-[11px] text-slate-600 font-sans">PII Shield + 8 DQ Invariants + RRF Scoring</div>
+            </div>
+
+            <div className="bg-white border border-emerald-200 rounded-lg p-3 space-y-1">
+              <span className="text-[10px] font-mono uppercase text-emerald-600 font-bold">Output Golden Dataset</span>
+              <div className="text-xs font-bold text-emerald-800 font-mono">semantra.canonical.db</div>
+              <div className="text-[11px] text-slate-500 font-mono">{presetInfo.target} (Golden Record)</div>
+            </div>
+          </div>
+        </div>
+
+        {/* 14. Output Contract Summary */}
         <div className="space-y-3">
           <h2 className="text-base font-bold text-slate-900 font-mono tracking-tight flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-indigo-600"></span>

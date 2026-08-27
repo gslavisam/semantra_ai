@@ -72,7 +72,7 @@ How can I help you today? You can type any question or pick a quick prompt below
           return [
             { label: '⚙️ How to setup source model?', query: 'How do I select a preset source model or upload companion specs in Setup?' },
             { label: '🔍 How to use Reverse Engineering?', query: 'How does contract reverse engineering parse SQL DDL or OpenAPI into a target schema?' },
-            { label: '🚀 4-Step Workflow Guide', query: 'What are the 4 main steps in the Semantra workspace workflow?' },
+            { label: '🚀 5-Step Workflow Guide', query: 'What are the 5 main steps in the Semantra workspace workflow?' },
             { label: '🤖 Workspace Status', query: 'What is the current workspace status and recommended next steps?' }
           ];
         case 'mapping':
@@ -91,6 +91,7 @@ How can I help you today? You can type any question or pick a quick prompt below
           ];
         case 'code':
           return [
+            { label: '🌐 OpenLineage & Provenance', query: 'Explain how OpenLineage and data provenance tracking works in Semantra for EU AI Act compliance.' },
             { label: '💻 Export PySpark / SQL / Pandas', query: 'What transformation code formats can I export from Code Output?' },
             { label: '🧪 dbt Schema Tests & Great Expectations', query: 'How do I use auto-generated dbt schema.yml tests and Great Expectations?' },
             { label: '🚀 Deploying Generated Code', query: 'How can I run the generated transformation code in production?' }
@@ -199,6 +200,10 @@ How can I help you today? You can type any question or pick a quick prompt below
         'dbt', 'quality', 'sanitize', 'expectations', 'test', 'validate', 'assertion',
         'dbt', 'kvalitet', 'expectations', 'test', 'valid', 'prov'
       ],
+      openlineage: [
+        'openlineage', 'lineage', 'provenance', 'marquez', 'datahub', 'eu ai act', 'trace', 'origin', 'facet',
+        'lineage', 'poreklo', 'porekl', 'trag', 'trasibilnost', 'trasir', 'audit trail', 'marquez', 'datahub'
+      ],
       scoring: [
         'score', 'signal', 'compute', 'confidence', 'algorithm', 'weight', 'name signal', 'semantic',
         'score', 'skor', 'signal', 'prorac', 'prorač', 'pover', 'algor', 'tez', 'tež'
@@ -261,38 +266,46 @@ How can I help you today? You can type any question or pick a quick prompt below
       const intentId = bestIntent[0];
 
       if (intentId === 'getting_started') {
-        return `🚀 **Getting Started Guide & Recommended 4-Step Workflow:**
+        return `🚀 **Getting Started Guide & Recommended 5-Step Workspace Pipeline:**
 
-Welcome to Semantra Data Workbench! Here is the recommended step-by-step path to start working with your data:
+Welcome to **Semantra v1.3 Enterprise Workbench**! Here is the recommended step-by-step path to execute semantic data integration:
 
-1️⃣ **Step 1: Select Source & Load Target Schema (Workspace)**
-   - Go to **Workspace** from the left menu.
-   - Choose a preset (e.g. \`Customer Sales Area\`) or use **Reverse Engineering** to parse your own DDL / OpenAPI spec.
+1️⃣ **Step 1: Setup & Ingestion (Workspace > Setup)**
+   - Select a verified enterprise pilot preset (e.g. \`SAP DEBMAS Customer Master\`, \`Workday Worker XML\`, \`QuickBooks Invoices\`) or upload your custom CSV, JSON, DDL, or Excel schema.
+   - Attach optional **Companion Metadata / Spec Sheets** to enrich semantic context.
+   - Built-in **PII Sanitization Shield** automatically detects and masks confidential values.
 
-2️⃣ **Step 2: Review Mapping & Match Scores (Trust Review)**
-   - Inspect automated candidate matches. High confidence items (green) are auto-approved.
-   - For **Low Confidence** items (red/yellow), click **"Trust Review"** to adjust mapping rules or run **Batch AI Spec Analysis**.
+2️⃣ **Step 2: Review Candidates & Multi-Signal Scoring (Workspace > Candidates)**
+   - Inspect automated candidate alignments ranked across 10 deterministic and AI signals with **Reciprocal Rank Fusion (RRF)**.
+   - Open the **Signal Breakdown Drawer** for granular heuristic math and RRF confidence insights.
 
-3️⃣ **Step 3: Governance & Catalog Reuse (Catalog / Governance)**
-   - Search the **Enterprise Catalog** to reuse previously approved organizational mapping standards.
-   - Promote verified custom mappings into the **Canonical Glossary**.
+3️⃣ **Step 3: Decision Log & Human-in-the-Loop Review (Workspace > Decisions)**
+   - Accept, override, reject, or attach custom transformation logic (*Direct Map*, *Type Cast*, *SQL Expression*, *Regex Extraction*, *Lookup Table*).
+   - All actions generate an immutable audit trail with timestamp and steward rationale.
 
-4️⃣ **Step 4: Generate Transformation Code & Data Quality Suite (Code Output)**
-   - Open the **Code Output** tab to export ready-to-use ETL scripts (**SQL**, **PySpark**, **Pandas**, **Talend**).
-   - Grab automatically generated **dbt schema tests** and **Great Expectations** assertions to ensure downstream data quality.
+4️⃣ **Step 4: Code Output & Test Generation (Workspace > Code)**
+   - Export production-ready ETL scripts in **PySpark DataFrame**, **ANSI SQL / dbt**, **Pandas**, and **MuleSoft DataWeave**.
+   - Review automatically generated **Data Quality Invariants**, dbt schema tests, and Great Expectations suites.
+   - Run live Python sandbox dry-runs against sample datasets.
 
-❓ *Would you like me to guide you through Step 1 (Workspace mapping) or Step 2 (Trust Review) right now?*`;
+5️⃣ **Step 5: Executive Business Analyst Report (Workspace > BA Report)**
+   - Generate and export the complete **Executive BA Specification Report** in Markdown / PDF for stakeholders.
+
+❓ *Would you like me to guide you through Step 1 (Setup) or Step 2 (Review Candidates) right now?*`;
       }
 
       if (intentId === 'reverse_engineering') {
-        return `🔍 **Contract Reverse Engineering Module:**
-- **Purpose:** Automatically infers target entity structures, field types, and semantic definitions from raw technical contracts.
-- **Supported Contract Formats:**
-  1. **SQL DDL Statements** (e.g. \`CREATE TABLE customer_master (...)\`)
-  2. **JSON Schema / Sample Payloads**
-  3. **OpenAPI / Swagger Specs** (YAML or JSON API definitions)
-  4. **CSV Header & Sample Data Files**
-- **How to use:** Navigate to the **Reverse Engineering** view from the sidebar, paste your raw contract payload, and click **"Reverse Engineer Schema"**. The engine parses field metadata and imports it directly as a target model in your Workspace.`;
+        return `🔍 **Contract Reverse Engineering Engine (Mode 2):**
+- **Purpose:** Deconstructs complex, multi-entity legacy schemas, raw DDL scripts, WSDL/XSD definitions, and OpenAPI contracts into vendor-agnostic canonical models.
+- **8-Step Architecture:**
+  1. **Multi-Entity Raw Input:** Ingests relational SQL DDLs, OpenAPI specs, Workday WSDLs, and nested JSON schemas.
+  2. **Structural Decomposition:** Identifies entities, fields, data types, and nullability flags.
+  3. **Entity Relationship Graph & Smart FK Analysis:** Interactive visual topology graph deducing cardinalities (\`1:1\`, \`1:N\`, \`N:M\`) and integrity behaviors (\`CASCADE\` vs \`RESTRICT\`).
+  4. **Canonical Model Synthesis:** Synthesizes vendor-agnostic entities with >90% calculated confidence.
+  5. **Contract Invariant Assertions:** Mathematically derives contract rules with **1-Click Sync to Workspace Test Sets**.
+  6. **Multi-Target Code Export:** Generates clean schema contracts, Python adapters, and TypeScript DTOs for enterprise ESBs (MuleSoft, Boomi, Camel).
+  7. **Visual Architecture Diagram:** End-to-end topology mapping source systems, middleware gateways, and targets.
+  8. **Executive BA Contract Report:** Formally structured readiness assessment for architects and stakeholders.`;
       }
 
       if (intentId === 'setup') {
@@ -353,20 +366,27 @@ To start your integration project, you first establish your **Source Model** and
 
       if (intentId === 'benchmarks') {
         return `🎯 **Benchmark & Accuracy Evaluation Suite:**
-- **Purpose:** Provides rigorous, quantitative evaluation of mapping engine accuracy against verified gold-standard datasets.
+- **Purpose:** Provides rigorous, quantitative evaluation of mapping engine accuracy against verified gold-standard datasets (SAP DEBMAS, Workday Worker, QuickBooks).
 - **Key Metrics Tracked:**
-  - **Match Precision & Recall:** Proportion of correctly mapped attributes versus gold baseline.
-  - **Fit Score Delta:** Measures accuracy improvements when testing new algorithm weights or Draft Dictionary Overlays.
-- **Access:** Select **"Benchmarks"** from the left sidebar to run evaluation suites and compare accuracy metrics.`;
+  - **Precision (P):** TP / (TP + FP) — Proportion of mapped attributes that are genuinely accurate.
+  - **Recall (R):** TP / (TP + FN) — Coverage of target domain discovered automatically.
+  - **F1-Score:** Balanced harmonic mean measuring robust accuracy without sacrificing volume.
+- **Golden Master Alignment Audit:**
+  - Audits workspace mappings against the authoritative Golden Master specification.
+  - Identifies 4 deviation classes: *Exact Match (100%)*, *Functional Variation*, *Target Discrepancy*, and *Missing Mapping*.
+  - **1-Click Auto-Healing:** Click **"Auto-Align with Golden Master"** to instantly reconcile workspace rules with reference standards.
+- **Analyst Correction Impact:** Plots historical ROI curves proving exponential reduction in manual review hours over time.`;
       }
 
       if (intentId === 'config') {
         return `⚙️ **System Configuration & AI Provider Settings:**
 - **Purpose:** Controls the underlying AI model providers, API keys, signal weights, and runtime execution modes.
 - **Options Available:**
-  - **Model Selection:** Choose between Google Gemini (e.g. Gemini 3.6 Flash), Anthropic Claude, or Offline Deterministic Mode.
+  - **Model Selection:** Choose between Google Gemini (Gemini 2.5 Flash), Anthropic Claude, or Offline Deterministic Mode.
   - **Signal Weight Tuning:** Adjust the balance between Name, Semantic, Knowledge, and LLM signals.
-  - **Bounded AI Guardrails:** Enable or disable AI-assisted spec analysis while ensuring deterministic fallback.
+  - **Circuit Breaker Engine:** Live monitoring of fail-safe execution states with automatic fallback.
+  - **Zero-Trust Security Triad:** Real-time demonstration of mTLS transport validation, ABAC dynamic field masking, and Hardware HSM digital signing.
+  - **Express Server API Catalog:** Inspect protected backend routes on port 3000 ensuring zero API key exposure to browser clients.
 - **Access:** Click **"System Config"** at the bottom of the left sidebar.`;
       }
 
@@ -405,14 +425,26 @@ To start your integration project, you first establish your **Source Model** and
 ❓ *Which quality test format (dbt YAML, Great Expectations Python, or SQL Audit) would you like to inspect?*`;
       }
 
+      if (intentId === 'openlineage') {
+        return `🌐 **Data Lineage & OpenLineage Standard (EU AI Act 2026 Auditability):**
+Semantra provides complete end-to-end data provenance tracking conforming to the **OpenLineage 1.0 Standard**:
+- 🏷️ **Input & Output Datasets:** Tracks source raw namespaces (\`sap.production.erp\`) and target canonical golden datasets (\`semantra.canonical.db\`) with dataset hashes and column-level schemas.
+- ⚙️ **Transformation Facets:** Embeds deterministic mapping rules, RRF match scores, and PII redaction shield rules directly into metadata facets.
+- 🔒 **Sovereign Security Facets:** Non-repudiation cryptographic verification (mTLS x509 + HSM signing context).
+- 🚀 **Marquez & DataHub Compatibility:** Emits standard \`START\`, \`RUNNING\`, \`COMPLETE\`, and \`FAIL\` event payloads ready for automated ingestion into corporate catalog graphs.
+
+💡 *Navigate to **Step 4: Output &rarr; OpenLineage (DataHub/Marquez)** to view the interactive lineage graph, test event emissions, or copy the standard JSON/Python tracking script.*`;
+      }
+
       if (intentId === 'scoring') {
         return `📊 **Multi-Signal Scoring Engine Architecture:**
 
-Semantra calculates the aggregate **Match Score** by combining independent deterministic heuristics:
-- 🔤 **Name Signal (~0.25 weight):** String similarity on field tokens (Levenshtein / Jaro-Winkler).
-- 🧠 **Semantic Signal (~0.35 weight):** Field descriptions, data types, and semantic definitions.
-- 📘 **Knowledge & Companion Signal (~0.25 weight):** Companion specifications and metadata dictionary.
-- 🤖 **LLM & AI Signal (~0.15 weight):** Contextual Gemini evaluation.
+Semantra calculates candidate match rankings across 10 deterministic & AI signals using Reciprocal Rank Fusion (RRF with k=60):
+- 🔤 **Exact & Token Signals:** Exact name matches and token similarity (Levenshtein / Jaro-Winkler).
+- 🧠 **Semantic & Embedding Signals:** Vector similarity and semantic definitions.
+- 📘 **Knowledge & Canonical Signals:** Active overlay dictionaries and enterprise glossary rules.
+- 📊 **Pattern & Statistical Signals:** Regex matching, value ranges, and data type compatibility.
+- 🤖 **Correction & Bounded LLM Signals:** Contextual AI evaluation and historical steward confirmations.
 
 **Confidence Thresholds:**
 - **High (≥ 0.80):** Green indicator — approved for automated transformation.
@@ -538,7 +570,7 @@ Your query seems outside our core data workbench features, or requires further d
 
       {/* Floating Interactive Drawer Modal */}
       {isOpen && (
-        <div className="fixed bottom-4 left-68 z-50 w-96 max-w-[calc(100vw-18rem)] bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-3 duration-200 font-mono text-xs">
+        <div className="fixed bottom-4 left-68 z-50 w-[445px] max-w-[calc(100vw-18rem)] bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-3 duration-200 font-mono text-xs">
           {/* Header */}
           <div className="p-3.5 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -585,7 +617,7 @@ Your query seems outside our core data workbench features, or requires further d
           </div>
 
           {/* Messages Area */}
-          <div className="p-3 overflow-y-auto max-h-80 min-h-60 space-y-3 bg-slate-900/95 font-sans">
+          <div className="p-3 overflow-y-auto max-h-[380px] min-h-[260px] space-y-3 bg-slate-900/95 font-sans">
             {messages.map((msg) => (
               <div
                 key={msg.id}

@@ -24,7 +24,13 @@ import {
   Database,
   RefreshCw,
   GitPullRequest,
-  Network
+  Network,
+  Fingerprint,
+  FileSignature,
+  Shield,
+  Hash,
+  Lock,
+  FileCheck
 } from 'lucide-react';
 
 interface HelpModalProps {
@@ -47,7 +53,8 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
     { id: 'governance', title: '6. Governance & Canonical Catalog', icon: ShieldCheck },
     { id: 'benchmarks', title: '7. Benchmarks & Learning Curves', icon: TrendingUp },
     { id: 'standalone_web', title: '8. Web Workbench vs Python CLI', icon: Terminal },
-    { id: 'workflows', title: '9. Supported Workflows & Navigation (WF-01–13)', icon: GitPullRequest, badge: 'WF-01–13' }
+    { id: 'workflows', title: '9. Supported Workflows & Navigation (WF-01–13)', icon: GitPullRequest, badge: 'WF-01–13' },
+    { id: 'mtls_hsm_security', title: '10. Zero-Trust Security Triad (mTLS + ABAC + HSM)', icon: Fingerprint, badge: 'Zero-Trust Sec' }
   ];
 
   const filteredSections = helpSections.filter(sec => 
@@ -1036,12 +1043,12 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 font-bold text-white text-xs font-mono">
                         <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded text-[10px]">STEP 3</span>
-                        <span>Canonical Model Synthesis</span>
+                        <span>Entity Relationship Graph &amp; Smart FK Analysis</span>
                       </div>
-                      <span className="text-[10px] font-mono text-indigo-400">Canonical Extraction</span>
+                      <span className="text-[10px] font-mono text-indigo-400">FK Graph Discovery</span>
                     </div>
                     <p className="text-slate-300 text-xs leading-relaxed">
-                      Synthesizes vendor-agnostic Canonical Integration Models (e.g., <code className="text-indigo-300 font-mono">Canonical_Worker</code>, <code className="text-indigo-300 font-mono">Canonical_JobProfile</code>, <code className="text-indigo-300 font-mono">Canonical_ShiftBlock</code>) with calculated confidence scores (&gt; 90%). Allows importing synthesized canonical definitions directly into the core Semantra mapping workspace for governance enrichment.
+                      Constructs an interactive topological foreign-key graph connecting source and target entity trees. Automatically deduces relation cardinalities (<code className="text-indigo-300 font-mono">1:1</code>, <code className="text-indigo-300 font-mono">1:N</code>, <code className="text-indigo-300 font-mono">N:M</code>) and integrity behaviors (<code className="text-indigo-300 font-mono">CASCADE</code> vs <code className="text-indigo-300 font-mono">RESTRICT</code>). Allows integration architects to add custom virtual joins and verify parent-child sync ordering.
                     </p>
                   </div>
 
@@ -1050,12 +1057,12 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 font-bold text-white text-xs font-mono">
                         <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded text-[10px]">STEP 4</span>
-                        <span>Refined Contract & Code Export</span>
+                        <span>Canonical Model Synthesis &amp; Contract Invariant Assertions</span>
                       </div>
-                      <span className="text-[10px] font-mono text-indigo-400">Artifact Generation</span>
+                      <span className="text-[10px] font-mono text-indigo-400">Canonical Extraction &amp; QA</span>
                     </div>
                     <p className="text-slate-300 text-xs leading-relaxed">
-                      Generates cleaned, auto-repaired integration contract JSON/YAML payloads alongside executable Python and TypeScript payload transformation code for ESB/middleware integration (MuleSoft, Boomi, Apache Camel, or custom API gateways).
+                      Synthesizes vendor-agnostic Canonical Integration Models (e.g., <code className="text-indigo-300 font-mono">Canonical_Worker</code>, <code className="text-indigo-300 font-mono">Canonical_JobProfile</code>, <code className="text-indigo-300 font-mono">Canonical_ShiftBlock</code>) with calculated confidence scores (&gt; 90%). Automatically derives mathematical contract invariants (nullability, range constraints, enum bounds) and allows <strong>1-Click Sync to Workspace Test Sets</strong>.
                     </p>
                   </div>
 
@@ -1064,12 +1071,26 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 font-bold text-white text-xs font-mono">
                         <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded text-[10px]">STEP 5</span>
-                        <span>Visual Architecture & BA Docs</span>
+                        <span>Refined Contract &amp; Multi-Target Code Export</span>
                       </div>
-                      <span className="text-[10px] font-mono text-indigo-400">Architecture Diagram</span>
+                      <span className="text-[10px] font-mono text-indigo-400">Artifact Generation</span>
                     </div>
                     <p className="text-slate-300 text-xs leading-relaxed">
-                      Renders an interactive topology and flow diagram of source system endpoints, enterprise middleware, and target applications. Produces executive business analyst summary reports containing integration health metrics, entity sync tables, and compliance status.
+                      Generates cleaned, auto-repaired integration contract JSON/YAML payloads alongside executable Python, PySpark, and TypeScript payload transformation code for enterprise ESB/middleware integration (MuleSoft, Boomi, Apache Camel, or custom API gateways).
+                    </p>
+                  </div>
+
+                  {/* MODE 2 - STEP 6 */}
+                  <div className="p-4 bg-slate-950 border border-indigo-900/40 rounded-xl space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 font-bold text-white text-xs font-mono">
+                        <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded text-[10px]">STEP 6</span>
+                        <span>Visual Architecture &amp; Executive BA Reports</span>
+                      </div>
+                      <span className="text-[10px] font-mono text-indigo-400">Architecture &amp; Docs</span>
+                    </div>
+                    <p className="text-slate-300 text-xs leading-relaxed">
+                      Renders an interactive topology diagram of source endpoints, enterprise middleware, and target applications. Produces comprehensive Business Analyst summary reports containing integration health metrics, entity sync tables, and regulatory compliance readiness.
                     </p>
                   </div>
                 </div>
@@ -1693,49 +1714,171 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
               </div>
             )}
 
-            {/* SECTION 7: BENCHMARKS */}
+            {/* SECTION 7: BENCHMARKS & EVALUATION CURVES */}
             {activeSection === 'benchmarks' && (
-              <div className="space-y-6">
+              <div className="space-y-6 animate-in fade-in duration-150">
                 <div className="border-b border-slate-800 pb-3">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-bold text-white flex items-center gap-2">
                       <TrendingUp className="w-5 h-5 text-emerald-400" />
-                      7. Benchmarks & Evaluation Curves
+                      7. Benchmarks, Ground-Truth Backtesting &amp; Golden Master Audit
                     </h3>
-                    <span className="px-2 py-0.5 text-[10px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded">
-                      Regression Test Suite
+                    <span className="px-2 py-0.5 text-[10px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded font-bold">
+                      Automated Evaluation Suite
                     </span>
                   </div>
-                  <p className="text-slate-400 text-xs mt-1">Measuring deterministic accuracy, regression test performance, and analyst correction impact curves.</p>
+                  <p className="text-slate-400 text-xs mt-1 leading-relaxed">
+                    Measuring deterministic mapping accuracy, mathematical Precision/Recall/F1 metrics, Golden Master deviation audits with 1-Click Auto-Healing, and analyst learning curves across enterprise datasets.
+                  </p>
                 </div>
 
-                <div className="space-y-3">
-                  <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
-                    <h4 className="font-bold text-emerald-300 text-xs uppercase font-mono tracking-wider">Automated Regression & Backtesting</h4>
+                {/* Core Architecture Cards */}
+                <div className="space-y-4">
+                  {/* 1. Automated Regression & Backtesting */}
+                  <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-bold text-emerald-300 text-xs uppercase font-mono tracking-wider flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                        1. Ground-Truth Backtesting &amp; Dataset Evaluation
+                      </h4>
+                      <span className="text-[10px] font-mono bg-slate-900 text-slate-300 px-2 py-0.5 rounded border border-slate-800">
+                        SAP, Workday, QuickBooks &amp; Custom Datasets
+                      </span>
+                    </div>
                     <p className="text-slate-300 text-xs leading-relaxed">
-                      The Benchmarks module runs active mapping engine configurations against ground-truth benchmark datasets (e.g. SAP Customer Master to Canonical Customer, Oracle EBS Financials to Standard Ledger). It calculates precision, recall, and overall F1-score to verify that newly promoted catalog rules or tuned scoring profiles improve mapping accuracy without causing regression errors in existing domains.
+                      The Benchmarks engine executes deterministic mapping algorithms against verified ground-truth test datasets (e.g. <code className="text-emerald-300 font-mono">SAP DEBMAS/KNA1 Customer Master</code>, <code className="text-emerald-300 font-mono">Workday Worker XML</code>, <code className="text-emerald-300 font-mono">QuickBooks Invoices</code>). It isolates match accuracy without relying on live production schemas, allowing integration teams to validate scoring rules before deployment.
                     </p>
+                    
+                    {/* Metrics Math Box */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1 text-xs">
+                      <div className="p-3 bg-slate-900 border border-slate-800 rounded-lg space-y-1">
+                        <div className="flex justify-between items-center">
+                          <span className="font-bold text-emerald-400 font-mono text-xs">Precision (P)</span>
+                          <span className="text-[10px] font-mono text-slate-400">TP / (TP + FP)</span>
+                        </div>
+                        <p className="text-slate-400 text-[11px] leading-relaxed">
+                          Measures the proportion of mapped fields that are genuinely correct. High precision eliminates catastrophic incorrect data loads.
+                        </p>
+                      </div>
+
+                      <div className="p-3 bg-slate-900 border border-slate-800 rounded-lg space-y-1">
+                        <div className="flex justify-between items-center">
+                          <span className="font-bold text-cyan-400 font-mono text-xs">Recall (R)</span>
+                          <span className="text-[10px] font-mono text-slate-400">TP / (TP + FN)</span>
+                        </div>
+                        <p className="text-slate-400 text-[11px] leading-relaxed">
+                          Measures how many expected ground-truth fields the engine successfully discovered and mapped automatically.
+                        </p>
+                      </div>
+
+                      <div className="p-3 bg-slate-900 border border-slate-800 rounded-lg space-y-1">
+                        <div className="flex justify-between items-center">
+                          <span className="font-bold text-purple-400 font-mono text-xs">F1-Score (Harmonic Mean)</span>
+                          <span className="text-[10px] font-mono text-slate-400">2 * (P * R) / (P + R)</span>
+                        </div>
+                        <p className="text-slate-400 text-[11px] leading-relaxed">
+                          The unified balance between precision and coverage, ensuring that auto-mapping algorithms do not sacrifice quality for volume.
+                        </p>
+                      </div>
+                    </div>
                   </div>
 
+                  {/* 2. Golden Master Alignment Audit & 1-Click Auto-Healing */}
+                  <div className="p-4 bg-slate-950 border border-indigo-900/50 rounded-xl space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-bold text-indigo-300 text-xs uppercase font-mono tracking-wider flex items-center gap-2">
+                        <ShieldCheck className="w-4 h-4 text-indigo-400" />
+                        2. Golden Master Alignment Audit &amp; 1-Click Auto-Healing
+                      </h4>
+                      <span className="text-[10px] font-mono bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/30 font-bold">
+                        Enterprise Quality Assurance
+                      </span>
+                    </div>
+                    <p className="text-slate-300 text-xs leading-relaxed">
+                      A <strong>Golden Master</strong> represents the formally approved reference specification for a schema integration (including exact canonical field targets, SQL expressions, and PySpark transformation rules). The Benchmarks audit tool inspects active workspace decisions against the Golden Master specification to detect governance drift:
+                    </p>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 text-xs font-sans">
+                      <div className="p-2.5 bg-slate-900 border border-slate-800 rounded-lg space-y-1">
+                        <span className="font-mono font-bold text-emerald-400 text-[11px] flex items-center gap-1">
+                          <Check className="w-3 h-3" /> Exact Match (100%)
+                        </span>
+                        <p className="text-[10px] text-slate-400">
+                          Target canonical field, transformation type, and expression match the Golden Master specification perfectly.
+                        </p>
+                      </div>
+
+                      <div className="p-2.5 bg-slate-900 border border-slate-800 rounded-lg space-y-1">
+                        <span className="font-mono font-bold text-cyan-400 text-[11px] flex items-center gap-1">
+                          <Scale className="w-3 h-3" /> Functional Variation
+                        </span>
+                        <p className="text-[10px] text-slate-400">
+                          Target is correct but uses an alternate dialect or equivalent SQL syntax (e.g. <code className="text-cyan-300 text-[9px]">UPPER()</code> vs <code className="text-cyan-300 text-[9px]">TRIM()</code>).
+                        </p>
+                      </div>
+
+                      <div className="p-2.5 bg-slate-900 border border-slate-800 rounded-lg space-y-1">
+                        <span className="font-mono font-bold text-amber-400 text-[11px] flex items-center gap-1">
+                          <AlertTriangle className="w-3 h-3" /> Target Discrepancy
+                        </span>
+                        <p className="text-[10px] text-slate-400">
+                          The mapped target differs from the reference master (e.g. mapped to <code className="text-amber-300 text-[9px]">postal_code</code> instead of <code className="text-amber-300 text-[9px]">zip_code</code>).
+                        </p>
+                      </div>
+
+                      <div className="p-2.5 bg-slate-900 border border-slate-800 rounded-lg space-y-1">
+                        <span className="font-mono font-bold text-rose-400 text-[11px] flex items-center gap-1">
+                          <X className="w-3 h-3" /> Missing Mapping
+                        </span>
+                        <p className="text-[10px] text-slate-400">
+                          Field required by Golden Master is currently unmapped in the workspace.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="p-3 bg-indigo-950/40 border border-indigo-800/60 rounded-lg text-xs space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-indigo-200 font-mono flex items-center gap-1.5">
+                          <Zap className="w-3.5 h-3.5 text-indigo-400" />
+                          1-Click "Auto-Align with Golden Master" Engine
+                        </span>
+                        <span className="text-[10px] font-mono text-indigo-300">Deterministic Re-alignment</span>
+                      </div>
+                      <p className="text-slate-300 text-[11px] leading-relaxed">
+                        Clicking <strong>"Auto-Align with Golden Master"</strong> instantly updates and aligns all workspace decisions to the reference master, resetting transformations to verified canonical rules, eliminating syntax drift, and generating timestamped audit entries.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* 3. Correction Impact, Learning Curves & ROI */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-                    <div className="p-3 bg-slate-950 border border-slate-800 rounded-lg space-y-1">
-                      <span className="font-bold text-emerald-400 block font-mono">Correction Gain Curve</span>
-                      <p className="text-slate-400 text-[11px]">
-                        Quantifies how each analyst correction and overlay promotion reduces manual review hours in subsequent mapping projects.
+                    <div className="p-3.5 bg-slate-950 border border-slate-800 rounded-xl space-y-1.5">
+                      <span className="font-bold text-emerald-400 block font-mono text-xs flex items-center gap-1.5">
+                        <TrendingUp className="w-3.5 h-3.5" />
+                        Analyst Learning Curve
+                      </span>
+                      <p className="text-slate-400 text-[11px] leading-relaxed">
+                        Quantifies how each analyst confirmation or override feeds back into knowledge overlays. As the catalog learns enterprise terminology, manual review queue volume drops exponentially across subsequent ERP and vendor ingests.
                       </p>
                     </div>
 
-                    <div className="p-3 bg-slate-950 border border-slate-800 rounded-lg space-y-1">
-                      <span className="font-bold text-cyan-400 block font-mono">Sensitivity Analysis</span>
-                      <p className="text-slate-400 text-[11px]">
-                        Tests different weight distributions across Exact, Token, Catalog, and Semantic signals to find optimal scoring profile parameters.
+                    <div className="p-3.5 bg-slate-950 border border-slate-800 rounded-xl space-y-1.5">
+                      <span className="font-bold text-cyan-400 block font-mono text-xs flex items-center gap-1.5">
+                        <Sliders className="w-3.5 h-3.5" />
+                        Signal Sensitivity Analysis
+                      </span>
+                      <p className="text-slate-400 text-[11px] leading-relaxed">
+                        Enables engineers to simulate weight distributions across <strong>Exact Name</strong>, <strong>Token Similarity</strong>, <strong>Catalog Reuse</strong>, and <strong>Semantic Embeddings</strong> to discover optimal scoring thresholds for specific industries.
                       </p>
                     </div>
 
-                    <div className="p-3 bg-slate-950 border border-slate-800 rounded-lg space-y-1">
-                      <span className="font-bold text-purple-400 block font-mono">Pilot Regression Subset</span>
-                      <p className="text-slate-400 text-[11px]">
-                        Executes targeted pilot validation subsets (<code className="text-purple-300 font-mono">PILOT_REGRESSION_SUBSET.md</code>) for rapid smoke testing during deployment cycles.
+                    <div className="p-3.5 bg-slate-950 border border-slate-800 rounded-xl space-y-1.5">
+                      <span className="font-bold text-purple-400 block font-mono text-xs flex items-center gap-1.5">
+                        <FileCheck className="w-3.5 h-3.5" />
+                        Pilot Regression Smoke Tests
+                      </span>
+                      <p className="text-slate-400 text-[11px] leading-relaxed">
+                        Executes targeted pilot validation subsets (<code className="text-purple-300 font-mono">PILOT_REGRESSION_SUBSET.md</code>) before production releases to certify that zero mapping regressions occur in existing deployed customer pipelines.
                       </p>
                     </div>
                   </div>
@@ -1781,6 +1924,41 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                       <p className="text-slate-300 text-[11px] leading-relaxed">
                         Express server (<code className="text-cyan-300 font-mono">server.ts</code>) orchestrates secure server-side Gemini 2.5 API requests, provides health telemetry endpoints, and manages full-stack bundle delivery.
                       </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Server Endpoints Catalog */}
+                <div className="p-4 bg-slate-950 border border-cyan-900/40 rounded-xl space-y-3 text-xs">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-bold text-cyan-300 uppercase tracking-wider font-mono text-xs flex items-center gap-1.5">
+                      <Terminal className="w-4 h-4 text-cyan-400" />
+                      Express Server API Catalog &amp; Security Proxy Layer
+                    </h4>
+                    <span className="text-[10px] font-mono bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded border border-cyan-500/30">
+                      Zero Client API Key Leakage
+                    </span>
+                  </div>
+                  <p className="text-slate-300 text-[11px] leading-relaxed">
+                    All LLM queries and enterprise cryptographic handshakes route through dedicated server-side endpoints on port 3000. Client code never receives direct Gemini or secret keys:
+                  </p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] font-mono">
+                    <div className="p-2 bg-slate-900 border border-slate-800 rounded">
+                      <span className="text-emerald-400 font-bold block">POST /api/ai/enhance-mappings</span>
+                      <span className="text-slate-400 text-[10px] font-sans">Bounded AI scoring enhancement with strict candidate filters &amp; Hungarian arbitration.</span>
+                    </div>
+                    <div className="p-2 bg-slate-900 border border-slate-800 rounded">
+                      <span className="text-cyan-400 font-bold block">POST /api/ai/analyze-companion</span>
+                      <span className="text-slate-400 text-[10px] font-sans">Companion dictionary metadata extraction from raw DDL/CSV/spec sheets.</span>
+                    </div>
+                    <div className="p-2 bg-slate-900 border border-slate-800 rounded">
+                      <span className="text-purple-400 font-bold block">POST /api/ai/synthesize-code</span>
+                      <span className="text-slate-400 text-[10px] font-sans">Governed PySpark/Pandas/dbt script generation matching target grain.</span>
+                    </div>
+                    <div className="p-2 bg-slate-900 border border-slate-800 rounded">
+                      <span className="text-amber-400 font-bold block">POST /api/zero-trust/process-record</span>
+                      <span className="text-slate-400 text-[10px] font-sans">Zero-Trust pipeline: mTLS auth ➔ ABAC field masking ➔ Hardware HSM digital signature.</span>
                     </div>
                   </div>
                 </div>
@@ -2084,6 +2262,139 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                   <p className="text-slate-300 text-[11px] leading-relaxed">
                     Semantra is built as a pilot-ready <strong>semantic mapping, review, governance, and reuse workbench</strong> powered by bounded AI guidance. It is <em>not</em> an autonomous production ETL engine, scheduled job orchestrator, connector platform, or graph metadata server.
                   </p>
+                </div>
+              </div>
+            )}
+
+            {/* SECTION 10: ZERO-TRUST SECURITY TRIAD (mTLS + ABAC + HSM) */}
+            {activeSection === 'mtls_hsm_security' && (
+              <div className="p-6 space-y-6 animate-in fade-in duration-150">
+                <div className="border-b border-slate-800 pb-4">
+                  <div className="flex items-center gap-2 text-xs font-mono text-indigo-400 uppercase tracking-wider font-semibold">
+                    <Fingerprint className="w-4 h-4" />
+                    High-Assurance Enterprise B2B Governance
+                  </div>
+                  <h3 className="text-lg font-bold text-white font-sans mt-1">
+                    10. Zero-Trust Security Triad: mTLS ➔ ABAC ➔ HSM Pipeline
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                    How Semantra eliminates API key leakage, prevents API endpoint proliferation through attribute-based field masking, and guarantees cryptographic non-repudiation for banking, automotive, and ERP integrations.
+                  </p>
+                </div>
+
+                {/* 3-Step Defense Pipeline Visual Diagram */}
+                <div className="p-4 bg-slate-950 border border-indigo-900/60 rounded-xl space-y-3">
+                  <span className="text-[10px] font-mono uppercase text-indigo-400 font-bold tracking-wider block">
+                    Three-Stage Deterministic Defense Architecture:
+                  </span>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs font-sans">
+                    <div className="p-3 bg-slate-900 border border-slate-800 rounded-lg space-y-1">
+                      <span className="px-1.5 py-0.5 bg-indigo-500/20 text-indigo-300 font-mono text-[9px] rounded font-bold">
+                        LAYER 1: TRANSPORT
+                      </span>
+                      <h5 className="font-bold text-slate-200 text-xs">Mutual TLS (mTLS)</h5>
+                      <p className="text-[11px] text-slate-400">
+                        x509 bi-directional handshake against PKI whitelist. Unauthenticated callers terminated at Layer 4/7 with 403 Forbidden.
+                      </p>
+                    </div>
+
+                    <div className="p-3 bg-slate-900 border border-slate-800 rounded-lg space-y-1">
+                      <span className="px-1.5 py-0.5 bg-amber-500/20 text-amber-300 font-mono text-[9px] rounded font-bold">
+                        LAYER 2: APPLICATION
+                      </span>
+                      <h5 className="font-bold text-slate-200 text-xs">ABAC Field-Level Masking</h5>
+                      <p className="text-[11px] text-slate-400">
+                        Dynamic Policy Decision Point (PDP) evaluates Role, Region &amp; Limits. Secrets masked (<code className="text-amber-300 text-[10px]">[REDACTED]</code>) without extra endpoints.
+                      </p>
+                    </div>
+
+                    <div className="p-3 bg-slate-900 border border-slate-800 rounded-lg space-y-1">
+                      <span className="px-1.5 py-0.5 bg-emerald-500/20 text-emerald-300 font-mono text-[9px] rounded font-bold">
+                        LAYER 3: HARDWARE
+                      </span>
+                      <h5 className="font-bold text-slate-200 text-xs">HSM Cryptographic Seal</h5>
+                      <p className="text-[11px] text-slate-400">
+                        SHA-256 digest of cleansed payload is sealed inside tamper-proof hardware for legal non-repudiation and PSD2 compliance.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Core Pillars Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-xs font-mono">
+                        1
+                      </div>
+                      <h4 className="text-xs font-bold text-slate-200 font-sans">
+                        Bi-Directional x509 Mutual TLS (mTLS)
+                      </h4>
+                    </div>
+                    <p className="text-slate-400 text-xs leading-relaxed">
+                      Instead of relying on static <code className="text-indigo-300">X-API-Key</code> headers or bearer tokens that can be leaked, the API Gateway requires the client to present a client certificate signed by a trusted Enterprise PKI. Connections from unwhitelisted certificate fingerprints are terminated immediately.
+                    </p>
+                  </div>
+
+                  <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xs font-mono">
+                        2
+                      </div>
+                      <h4 className="text-xs font-bold text-slate-200 font-sans">
+                        Attribute-Based Access Control (ABAC &amp; Masking)
+                      </h4>
+                    </div>
+                    <p className="text-slate-400 text-xs leading-relaxed">
+                      Solves the "API Endpoint Proliferation" problem. A single Golden Record endpoint serves Analysts, Operations, and Auditors. If a user lacks permission for sensitive fields (e.g., <code className="text-amber-300">margin_percentage</code>, <code className="text-amber-300">supplier_bank_account</code>), Semantra dynamically redacts those fields with <code className="text-amber-300">[REDACTED_BY_ABAC_POLICY]</code>.
+                    </p>
+                  </div>
+
+                  <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs font-mono">
+                        3
+                      </div>
+                      <h4 className="text-xs font-bold text-slate-200 font-sans">
+                        Hardware Security Module (HSM) Signing
+                      </h4>
+                    </div>
+                    <p className="text-slate-400 text-xs leading-relaxed">
+                      Every filtered payload is normalized, SHA-256 hashed, and cryptographically signed inside an HSM slot (<code className="text-emerald-300">HSM_KEY_SERBIA_PROD_2026</code>). The private signing key never leaves tamper-proof hardware, providing a verifiable legal seal.
+                    </p>
+                  </div>
+
+                  <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-xs font-mono">
+                        4
+                      </div>
+                      <h4 className="text-xs font-bold text-slate-200 font-sans">
+                        Guaranteed Non-Repudiation (Audit Trail)
+                      </h4>
+                    </div>
+                    <p className="text-slate-400 text-xs leading-relaxed">
+                      Prevents transaction denial. If a client transmits a €500,000 disbursement, the cryptographic signature + certificate thumbprint recorded in the <strong>Immutable Audit Trail</strong> provides undeniable legal and technical proof of origin and exact redacted content.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Where to Access in Semantra */}
+                <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-3">
+                  <h4 className="font-bold text-slate-200 text-xs font-sans flex items-center gap-2">
+                    <Sliders className="w-4 h-4 text-indigo-400" />
+                    How to Test &amp; Use in Semantra
+                  </h4>
+                  <ul className="space-y-2 text-xs text-slate-300 font-sans">
+                    <li className="flex items-start gap-2">
+                      <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                      <span><strong>Interactive Multi-Stage Sandbox:</strong> Open <em>System Config &rarr; 3. Zero-Trust Security (mTLS + ABAC + HSM)</em> to test live client certificates, switch subject roles (Finance Analyst CEE vs Super Auditor), and observe instant field masking and HSM signature generation.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                      <span><strong>Production Python Pipeline:</strong> In <em>System Config</em>, copy the complete <code className="text-indigo-300">semantra_zero_trust_pipeline.py</code> module with <code className="text-indigo-300">HardwareSecurityModule</code>, <code className="text-indigo-300">ABACPolicyEngine</code>, and <code className="text-indigo-300">mTLSAuthenticationInterceptor</code>.</span>
+                    </li>
+                  </ul>
                 </div>
               </div>
             )}
