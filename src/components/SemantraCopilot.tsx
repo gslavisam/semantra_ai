@@ -503,6 +503,7 @@ Your query seems outside our core data workbench features, or requires further d
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           query: text,
+          history: messages.slice(-8).map(m => ({ sender: m.sender, text: m.text })),
           activeTab,
           workspaceStep,
           mappingCount,

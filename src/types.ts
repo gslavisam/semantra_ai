@@ -170,6 +170,27 @@ export interface OpenAPIEndpoint {
   responseSample: object;
 }
 
+// Enterprise Anomaly Shield & Semantic Caching Settings
+export interface AnomalyDetectionConfig {
+  enabled: boolean; // default: false (optional)
+  zScoreThreshold: number; // default: 3.0
+  movingWindowSize: number; // default: 100
+  actionOnAnomaly: 'quarantine_dlq' | 'fail_pipeline' | 'warn_only';
+  isolationForestEnabled: boolean;
+}
+
+export interface SemanticCacheConfig {
+  enabled: boolean; // default: false (optional)
+  similarityThreshold: number; // default: 0.90
+  cacheTtlHours: number; // default: 72
+  engine: 'redis_vector' | 'memory_vector';
+}
+
+export interface EnterpriseFeaturesConfig {
+  anomalyDetection: AnomalyDetectionConfig;
+  semanticCache: SemanticCacheConfig;
+}
+
 // Phase 2: AI Security & Circuit Breaker Types
 export type PIIType = 'email' | 'phone' | 'tax_id' | 'iban' | 'national_id' | 'credit_card' | 'name' | 'address' | 'custom';
 

@@ -36,22 +36,45 @@ import {
   UserCheck,
   Filter,
   LockKeyhole,
-  FileText
+  FileText,
+  SlidersHorizontal,
+  TrendingUp,
+  Radio,
+  Database,
+  Inbox,
+  AlertOctagon,
+  Archive,
+  Trash2,
+  HelpCircle,
+  Info,
+  Clock,
+  ArrowUpDown,
+  CheckCheck,
+  CheckSquare
 } from 'lucide-react';
-import { AIModelConfig, AIProvider, OpenAPIEndpoint, CircuitBreakerMetrics, PIIEntity } from '../types';
+import { 
+  AIModelConfig, 
+  AIProvider, 
+  OpenAPIEndpoint, 
+  CircuitBreakerMetrics, 
+  PIIEntity,
+  EnterpriseFeaturesConfig 
+} from '../types';
 import { globalCircuitBreaker } from '../lib/circuitBreaker';
 import { maskPIIPayload, unmaskPIIText, DEFAULT_PII_SETTINGS, PIISettings } from '../lib/piiMasking';
 
 interface SystemConfigViewProps {
   aiConfig: AIModelConfig;
   setAiConfig: React.Dispatch<React.SetStateAction<AIModelConfig>>;
+  enterpriseFeatures?: EnterpriseFeaturesConfig;
+  setEnterpriseFeatures?: React.Dispatch<React.SetStateAction<EnterpriseFeaturesConfig>>;
 }
 
 const PROVIDER_MODEL_PRESETS: Record<AIProvider, { id: string; name: string; desc: string }[]> = {
   gemini: [
-    { id: 'gemini-3.6-flash', name: 'Gemini 3.6 Flash (Default)', desc: 'Ultra-fast, highly accurate for structured mapping & closed-set validation' },
-    { id: 'gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro Preview', desc: 'Complex reasoning & deep code generation for intricate SQL/PySpark pipelines' },
-    { id: 'gemini-3.1-flash-lite', name: 'Gemini 3.1 Flash Lite', desc: 'Minimal latency for bulk field matching' }
+    { id: 'gemini-3.7-flash', name: 'Gemini 3.7 Flash (Default)', desc: 'Ultra-fast, highly accurate for structured mapping, reasoning & closed-set validation' },
+    { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', desc: 'Deep reasoning & advanced code generation for intricate SQL/PySpark pipelines' },
+    { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', desc: 'Minimal latency for high-throughput bulk field matching' }
   ],
   openai: [
     { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol (Default)', desc: 'Absolute flagship for complex workloads, heavy schema coding, and deep reasoning' },
@@ -127,13 +150,13 @@ const OPENAPI_ENDPOINTS: OpenAPIEndpoint[] = [
     summary: 'Bounded LLM Candidate Validation',
     description: 'Submits closed candidate pairs to the configured AI model (Gemini / OpenAI / Ollama) with JSON guardrails.',
     requestBodySample: {
-      modelConfig: { provider: "gemini", modelName: "gemini-3.6-flash" },
+      modelConfig: { provider: "gemini", modelName: "gemini-3.7-flash" },
       candidatePairs: [
         { source: "KUNNR", target: "customer_id", sourceDesc: "Customer Number" }
       ]
     },
     responseSample: {
-      modelUsed: "gemini-3.6-flash",
+      modelUsed: "gemini-3.7-flash",
       validatedResults: [
         {
           sourceField: "KUNNR",
@@ -207,16 +230,117 @@ const OPENAPI_ENDPOINTS: OpenAPIEndpoint[] = [
       activeOverlay: "sap_best_plus_weak_promotion_overlay.csv",
       loadedConcepts: 18,
       aiProviderStatus: "connected",
-      aiActiveModel: "gemini-3.6-flash",
+      aiActiveModel: "gemini-3.7-flash",
       port: 3000
     }
   }
 ];
 
-export const SystemConfigView: React.FC<SystemConfigViewProps> = ({ aiConfig, setAiConfig }) => {
-  const [activeTab, setActiveTab] = useState<'models' | 'security' | 'mtls_hsm' | 'openapi'>('models');
+export const SystemConfigView: React.FC<SystemConfigViewProps> = ({ 
+  aiConfig, 
+  setAiConfig,
+  enterpriseFeatures: extEnterpriseFeatures,
+  setEnterpriseFeatures: extSetEnterpriseFeatures
+}) => {
+  const [activeTab, setActiveTab] = useState<'models' | 'security' | 'mtls_hsm' | 'openapi' | 'enterprise_shield'>('models');
   const [testState, setTestState] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
   const [testOutput, setTestOutput] = useState<string | null>(null);
+
+  // Local fallback state for Enterprise Features if not provided via props
+  const [localEnterpriseFeatures, setLocalEnterpriseFeatures] = useState<EnterpriseFeaturesConfig>(() => ({
+    anomalyDetection: {
+      enabled: false, // Default is OFF / Optional
+      zScoreThreshold: 3.0,
+      movingWindowSize: 100,
+      actionOnAnomaly: 'quarantine_dlq',
+      isolationForestEnabled: false
+    },
+    semanticCache: {
+      enabled: false, // Default is OFF / Optional
+      similarityThreshold: 0.90,
+      cacheTtlHours: 72,
+      engine: 'redis_vector'
+    }
+  }));
+
+  const enterpriseConfig = extEnterpriseFeatures || localEnterpriseFeatures;
+  const updateEnterpriseConfig = (updater: (prev: EnterpriseFeaturesConfig) => EnterpriseFeaturesConfig) => {
+    if (extSetEnterpriseFeatures) {
+      extSetEnterpriseFeatures(updater);
+    } else {
+      setLocalEnterpriseFeatures(updater);
+    }
+  };
+
+  // Anomaly Detection State & Sandbox
+  const [anomalyHistory, setAnomalyHistory] = useState<number[]>([
+    1200.0, 1500.0, 1100.0, 1350.0, 1400.0, 1250.0, 1300.0, 1280.0, 1310.0, 1240.0
+  ]);
+  const [testTxId, setTestTxId] = useState<string>('TX-2026-102');
+  const [testTxAmount, setTestTxAmount] = useState<string>('18500.00');
+  const [testTxDesc, setTestTxDesc] = useState<string>('B2B Equipment Invoice');
+  const [isEvaluatingAnomaly, setIsEvaluatingAnomaly] = useState<boolean>(false);
+  const [anomalyEvalResult, setAnomalyEvalResult] = useState<{
+    evaluated: boolean;
+    txId: string;
+    amount: number;
+    mean: number;
+    stdev: number;
+    zScore: number;
+    threshold: number;
+    isAnomaly: boolean;
+    status: 'PASSED' | 'QUARANTINED_TO_DLQ' | 'PIPELINE_FAILED' | 'WARNING_FLAGGED';
+    timestamp: string;
+    reason: string;
+  } | null>(null);
+
+  const [dlqItems, setDlqItems] = useState<{
+    id: string;
+    txId: string;
+    amount: number;
+    zScore: number;
+    timestamp: string;
+    status: 'QUARANTINED' | 'OVERRIDDEN' | 'DISCARDED';
+    reason: string;
+  }[]>([
+    {
+      id: 'DLQ-091',
+      txId: 'TX-2026-089',
+      amount: 18500.00,
+      zScore: 143.45,
+      timestamp: '2026-08-28 10:14:02 UTC',
+      status: 'QUARANTINED',
+      reason: 'Z-Score 143.45 exceeded threshold 3.0σ (Historical mean $1,280)'
+    },
+    {
+      id: 'DLQ-092',
+      txId: 'TX-2026-094',
+      amount: 125000.00,
+      zScore: 971.20,
+      timestamp: '2026-08-28 10:45:18 UTC',
+      status: 'QUARANTINED',
+      reason: 'Decimal point slip error (100x mean invoice)'
+    }
+  ]);
+
+  // Semantic Vector Cache Sandbox State
+  const [testCacheQuery, setTestCacheQuery] = useState<string>('supplier_vat_id');
+  const [testCacheDesc, setTestCacheDesc] = useState<string>('Salesforce Vendor Tax Registration Number');
+  const [isQueryingCache, setIsQueryingCache] = useState<boolean>(false);
+  const [cacheQueryResult, setCacheQueryResult] = useState<{
+    evaluated: boolean;
+    query: string;
+    similarity: number;
+    isHit: boolean;
+    matchedQuery: string;
+    matchedTarget: string;
+    matchedRule: string;
+    latencyMs: number;
+    tokensSaved: number;
+    finOpsSavings: string;
+  } | null>(null);
+
+  const [activeCodeSnippetTab, setActiveCodeSnippetTab] = useState<'anomaly_python' | 'cache_python' | 'dbt_ge_tests'>('anomaly_python');
 
   // Circuit Breaker Telemetry State
   const [cbMetrics, setCbMetrics] = useState<CircuitBreakerMetrics>(globalCircuitBreaker.getMetrics());
@@ -748,66 +872,253 @@ paths:
 `;
   };
 
+  // Handler for Evaluating Anomaly Transaction
+  const handleRunAnomalyEvaluation = (amountOverride?: string, idOverride?: string) => {
+    setIsEvaluatingAnomaly(true);
+    setAnomalyEvalResult(null);
+
+    const targetAmountStr = amountOverride !== undefined ? amountOverride : testTxAmount;
+    const targetTxId = idOverride !== undefined ? idOverride : testTxId;
+    const amountVal = parseFloat(targetAmountStr) || 0;
+
+    setTimeout(() => {
+      setIsEvaluatingAnomaly(false);
+      const history = [...anomalyHistory];
+      const mean = history.reduce((a, b) => a + b, 0) / history.length;
+      const variance = history.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / (history.length - 1);
+      const stdev = Math.sqrt(variance) || 1.0;
+      const zScore = (amountVal - mean) / stdev;
+      const threshold = enterpriseConfig.anomalyDetection.zScoreThreshold;
+      const isAnomaly = Math.abs(zScore) > threshold;
+
+      let status: 'PASSED' | 'QUARANTINED_TO_DLQ' | 'PIPELINE_FAILED' | 'WARNING_FLAGGED' = 'PASSED';
+      let reason = `Within standard distribution interval: Z-Score ${zScore.toFixed(2)} ≤ threshold ${threshold.toFixed(1)}σ. (Mean: $${mean.toFixed(2)}, StdDev: $${stdev.toFixed(2)})`;
+
+      if (isAnomaly) {
+        if (enterpriseConfig.anomalyDetection.actionOnAnomaly === 'quarantine_dlq') {
+          status = 'QUARANTINED_TO_DLQ';
+          reason = `Critical Anomaly Detected! Z-Score ${zScore.toFixed(2)} exceeds threshold ${threshold.toFixed(1)}σ. Diverted to Dead Letter Queue (DLQ) to prevent golden ERP corruption.`;
+          setDlqItems(prev => [
+            {
+              id: `DLQ-${Date.now().toString().slice(-4)}`,
+              txId: targetTxId,
+              amount: amountVal,
+              zScore: parseFloat(zScore.toFixed(2)),
+              timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC',
+              status: 'QUARANTINED',
+              reason
+            },
+            ...prev
+          ]);
+        } else if (enterpriseConfig.anomalyDetection.actionOnAnomaly === 'fail_pipeline') {
+          status = 'PIPELINE_FAILED';
+          reason = `Pipeline Invariant Breach! Z-Score ${zScore.toFixed(2)} > ${threshold.toFixed(1)}σ. ETL job aborted.`;
+        } else {
+          status = 'WARNING_FLAGGED';
+          reason = `Advisory Anomaly Warning! Z-Score ${zScore.toFixed(2)} > ${threshold.toFixed(1)}σ. Ingestion permitted with DQ audit tag.`;
+        }
+      } else {
+        setAnomalyHistory(prev => {
+          const updated = [...prev, amountVal];
+          if (updated.length > enterpriseConfig.anomalyDetection.movingWindowSize) {
+            updated.shift();
+          }
+          return updated;
+        });
+      }
+
+      setAnomalyEvalResult({
+        evaluated: true,
+        txId: targetTxId,
+        amount: amountVal,
+        mean: parseFloat(mean.toFixed(2)),
+        stdev: parseFloat(stdev.toFixed(2)),
+        zScore: parseFloat(zScore.toFixed(2)),
+        threshold,
+        isAnomaly,
+        status,
+        timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC',
+        reason
+      });
+    }, 450);
+  };
+
+  // Handler for Semantic Cache Query
+  const handleRunCacheLookup = (fieldOverride?: string) => {
+    setIsQueryingCache(true);
+    setCacheQueryResult(null);
+
+    const query = fieldOverride !== undefined ? fieldOverride : testCacheQuery;
+
+    setTimeout(() => {
+      setIsQueryingCache(false);
+      const qLower = query.toLowerCase();
+      let similarity = 0.45;
+      let matchedQuery = 'NONE';
+      let matchedTarget = 'N/A';
+      let matchedRule = 'N/A';
+
+      if (qLower.includes('vat') || qLower.includes('tax') || qLower.includes('pib') || qLower.includes('steuernummer')) {
+        similarity = 0.94;
+        matchedQuery = 'VEND_TAX_NUM (SAP KNVV)';
+        matchedTarget = 'tax_identification_number';
+        matchedRule = "TRIM + REGEX_REPLACE('^0+', '')";
+      } else if (qLower.includes('kunnr') || qLower.includes('cust') || qLower.includes('client') || qLower.includes('account_no')) {
+        similarity = 0.97;
+        matchedQuery = 'KUNNR (SAP SD Sales Area)';
+        matchedTarget = 'customer_id';
+        matchedRule = "LPAD(10, '0')";
+      } else if (qLower.includes('vkorg') || qLower.includes('sales_org') || qLower.includes('org_id')) {
+        similarity = 0.92;
+        matchedQuery = 'VKORG (SAP ERP Sales Org)';
+        matchedTarget = 'sales_organization_id';
+        matchedRule = 'UPPERCASE_STANDARDIZATION';
+      } else if (qLower.includes('matnr') || qLower.includes('item_id') || qLower.includes('sku')) {
+        similarity = 0.91;
+        matchedQuery = 'MATNR (SAP Material Master)';
+        matchedTarget = 'material_id';
+        matchedRule = 'TRIM + REMOVE_SPECIAL_CHARS';
+      } else {
+        similarity = 0.38;
+      }
+
+      const threshold = enterpriseConfig.semanticCache.similarityThreshold;
+      const isHit = similarity >= threshold;
+
+      setCacheQueryResult({
+        evaluated: true,
+        query,
+        similarity,
+        isHit,
+        matchedQuery,
+        matchedTarget,
+        matchedRule,
+        latencyMs: isHit ? 1.8 : 1420.0,
+        tokensSaved: isHit ? 840 : 0,
+        finOpsSavings: isHit ? '$0.0042 (100% saved on this query)' : '$0.00 (LLM invoked)'
+      });
+    }, 400);
+  };
+
   return (
-    <div className="space-y-6">
-      {/* Overview Banner */}
-      <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-sans font-semibold text-slate-900 tracking-tight flex items-center gap-2">
-            <Cpu className="w-5 h-5 text-indigo-600" />
-            AI Model Selection &amp; Governance Architecture
-          </h2>
-          <p className="text-sm text-slate-500 mt-1 leading-relaxed">
-            Configure active AI Providers, inspect real-time <strong>Circuit Breaker resilience</strong>, test <strong>PII sanitization</strong>, and review the OpenAPI 3.0 contract.
-          </p>
+    <div className="space-y-6 font-sans">
+      {/* Executive Header Card */}
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="px-2.5 py-0.5 rounded-md bg-indigo-50 border border-indigo-200 text-indigo-700 text-[11px] font-mono font-bold tracking-wide uppercase">
+                System Governance &amp; Controls
+              </span>
+              <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-600 text-[11px] font-mono">
+                Semantra Core v2.4
+              </span>
+            </div>
+            <h2 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+              <Cpu className="w-5 h-5 text-indigo-600" />
+              AI Model Selection &amp; Governance Architecture
+            </h2>
+            <p className="text-xs text-slate-500 mt-1 max-w-3xl leading-relaxed">
+              Configure active AI Providers, inspect real-time <strong>Circuit Breaker resilience</strong>, test <strong>PII sanitization</strong>, manage <strong>Zero-Trust mTLS/ABAC</strong>, and activate optional <strong>Anomaly Shield &amp; Vector Cache</strong> engines.
+            </p>
+          </div>
+
+          {/* Quick System Telemetry Pills */}
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <div className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-left">
+              <span className="text-[10px] font-mono text-slate-400 block font-semibold uppercase">Active AI</span>
+              <span className="text-xs font-bold font-mono text-slate-800 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                {(aiConfig?.provider || 'gemini').toUpperCase()} ({((aiConfig?.modelName || 'default-model').split('-').slice(0, 3).join('-'))})
+              </span>
+            </div>
+            <div className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-left">
+              <span className="text-[10px] font-mono text-slate-400 block font-semibold uppercase">Security</span>
+              <span className="text-xs font-bold font-mono text-indigo-700 flex items-center gap-1">
+                <LockKeyhole className="w-3 h-3 text-indigo-600" />
+                mTLS + PII Shield
+              </span>
+            </div>
+          </div>
         </div>
 
-        {/* Tab Switcher */}
-        <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200 shrink-0 flex-wrap gap-1">
-          <button
-            onClick={() => setActiveTab('models')}
-            className={`flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-md transition-all cursor-pointer ${
-              activeTab === 'models' 
-                ? 'bg-slate-900 text-white shadow-sm' 
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Bot className="w-3.5 h-3.5" />
-            <span>1. Model Selection</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('security')}
-            className={`flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-md transition-all cursor-pointer ${
-              activeTab === 'security' 
-                ? 'bg-slate-900 text-white shadow-sm' 
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <ShieldAlert className="w-3.5 h-3.5 text-emerald-500" />
-            <span>2. PII Shield &amp; Circuit Breaker</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('mtls_hsm')}
-            className={`flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-md transition-all cursor-pointer ${
-              activeTab === 'mtls_hsm' 
-                ? 'bg-slate-900 text-white shadow-sm' 
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Fingerprint className="w-3.5 h-3.5 text-indigo-400" />
-            <span>3. Zero-Trust Security (mTLS + ABAC + HSM)</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('openapi')}
-            className={`flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-md transition-all cursor-pointer ${
-              activeTab === 'openapi' 
-                ? 'bg-slate-900 text-white shadow-sm' 
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Server className="w-3.5 h-3.5" />
-            <span>4. OpenAPI Contract</span>
-          </button>
+        {/* Structured Tabs Bar */}
+        <div className="pt-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div className="flex items-center gap-1.5 bg-slate-100/90 p-1.5 rounded-xl border border-slate-200/80 overflow-x-auto no-scrollbar max-w-full">
+            <button
+              onClick={() => setActiveTab('models')}
+              className={`flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-lg transition-all whitespace-nowrap cursor-pointer ${
+                activeTab === 'models' 
+                  ? 'bg-white text-slate-900 shadow-sm border border-slate-200/80 font-bold' 
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+              }`}
+            >
+              <Bot className={`w-3.5 h-3.5 ${activeTab === 'models' ? 'text-indigo-600' : 'text-slate-500'}`} />
+              <span>1. AI Models</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('security')}
+              className={`flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-lg transition-all whitespace-nowrap cursor-pointer ${
+                activeTab === 'security' 
+                  ? 'bg-white text-slate-900 shadow-sm border border-slate-200/80 font-bold' 
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+              }`}
+            >
+              <ShieldAlert className={`w-3.5 h-3.5 ${activeTab === 'security' ? 'text-emerald-600' : 'text-slate-500'}`} />
+              <span>2. PII Shield &amp; Circuit Breaker</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('mtls_hsm')}
+              className={`flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-lg transition-all whitespace-nowrap cursor-pointer ${
+                activeTab === 'mtls_hsm' 
+                  ? 'bg-white text-slate-900 shadow-sm border border-slate-200/80 font-bold' 
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+              }`}
+            >
+              <Fingerprint className={`w-3.5 h-3.5 ${activeTab === 'mtls_hsm' ? 'text-indigo-600' : 'text-slate-500'}`} />
+              <span>3. Zero-Trust &amp; HSM</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('openapi')}
+              className={`flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-lg transition-all whitespace-nowrap cursor-pointer ${
+                activeTab === 'openapi' 
+                  ? 'bg-white text-slate-900 shadow-sm border border-slate-200/80 font-bold' 
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+              }`}
+            >
+              <Server className={`w-3.5 h-3.5 ${activeTab === 'openapi' ? 'text-slate-900' : 'text-slate-500'}`} />
+              <span>4. OpenAPI Spec</span>
+            </button>
+
+            <div className="h-4 w-px bg-slate-300 mx-1 hidden sm:block"></div>
+
+            <button
+              onClick={() => setActiveTab('enterprise_shield')}
+              className={`flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-lg transition-all whitespace-nowrap cursor-pointer ${
+                activeTab === 'enterprise_shield' 
+                  ? 'bg-slate-900 text-white shadow-sm font-bold' 
+                  : 'text-slate-700 hover:text-slate-900 hover:bg-white/60'
+              }`}
+            >
+              <Activity className="w-3.5 h-3.5 text-amber-400" />
+              <span>5. Anomaly Shield &amp; Cache</span>
+              <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
+                enterpriseConfig.anomalyDetection.enabled || enterpriseConfig.semanticCache.enabled
+                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                  : 'bg-slate-200 text-slate-600'
+              }`}>
+                {enterpriseConfig.anomalyDetection.enabled || enterpriseConfig.semanticCache.enabled ? 'ON' : 'OPT-IN'}
+              </span>
+            </button>
+          </div>
+
+          <div className="text-[11px] font-mono text-slate-400 flex items-center gap-1.5 self-end md:self-center">
+            <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+            Tab {activeTab === 'models' ? '1/5' : activeTab === 'security' ? '2/5' : activeTab === 'mtls_hsm' ? '3/5' : activeTab === 'openapi' ? '4/5' : '5/5'}
+          </div>
         </div>
       </div>
 
@@ -2233,6 +2544,887 @@ class SemantraZeroTrustPipeline:
 const data = await res.json();`}</code>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 5: Optional Enterprise Anomaly Shield & Semantic Vector Cache */}
+      {activeTab === 'enterprise_shield' && (
+        <div className="space-y-8 animate-fade-in font-sans">
+          {/* Executive Overview Banner */}
+          <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-slate-800 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden">
+            <div className="absolute right-0 top-0 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
+            
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 text-[11px] font-mono font-bold uppercase tracking-wider flex items-center gap-1.5">
+                    <Activity className="w-3 h-3" />
+                    Optional Enterprise Capabilities
+                  </span>
+                  <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] font-mono">
+                    Default State: DISABLED (Opt-in)
+                  </span>
+                </div>
+                <h3 className="text-xl font-bold text-white tracking-tight">
+                  High-Throughput Anomaly Shield &amp; Semantic Decision Cache
+                </h3>
+                <p className="text-xs text-slate-300 max-w-3xl leading-relaxed">
+                  These modules are <strong>intentionally optional</strong> to keep standard schema mapping lean and deterministic. Enable them for mission-critical financial streams where <strong>Z-Score data outlier filtering ($|Z| &gt; 3.0$) + Dead Letter Queue (DLQ)</strong> prevents database poisoning, and <strong>Redis Vector Caching</strong> delivers sub-5ms decision reuse with zero LLM token costs.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3 shrink-0">
+                <div className="bg-slate-800/80 border border-slate-700/80 rounded-xl p-3 text-center min-w-[130px]">
+                  <span className="text-[10px] font-mono text-slate-400 uppercase block font-semibold">Anomaly Filter</span>
+                  <span className={`text-xs font-bold font-mono px-2 py-0.5 rounded-full inline-block mt-1 ${
+                    enterpriseConfig.anomalyDetection.enabled ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'bg-slate-700 text-slate-400'
+                  }`}>
+                    {enterpriseConfig.anomalyDetection.enabled ? '● ACTIVE' : '○ DISABLED'}
+                  </span>
+                </div>
+                <div className="bg-slate-800/80 border border-slate-700/80 rounded-xl p-3 text-center min-w-[130px]">
+                  <span className="text-[10px] font-mono text-slate-400 uppercase block font-semibold">Vector Cache</span>
+                  <span className={`text-xs font-bold font-mono px-2 py-0.5 rounded-full inline-block mt-1 ${
+                    enterpriseConfig.semanticCache.enabled ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'bg-slate-700 text-slate-400'
+                  }`}>
+                    {enterpriseConfig.semanticCache.enabled ? '● ACTIVE' : '○ DISABLED'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* GRID OF TWO ENTERPRISE ENGINES */}
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+            
+            {/* ========================================================= */}
+            {/* MODULE 1: REAL-TIME ANOMALY DETECTION ENGINE & DLQ */}
+            {/* ========================================================= */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-6 flex flex-col justify-between">
+              <div className="space-y-5">
+                {/* Header & Toggle */}
+                <div className="flex items-start justify-between border-b border-slate-100 pb-4">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 bg-amber-50 text-amber-700 rounded-lg border border-amber-200">
+                        <ShieldAlert className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="text-base font-bold text-slate-900">Real-Time Anomaly Detection Shield</h4>
+                        <span className="text-xs text-slate-500">Z-Score Statistical Deviation &amp; DLQ Quarantine</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Main Toggle */}
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={enterpriseConfig.anomalyDetection.enabled}
+                      onChange={(e) => updateEnterpriseConfig(prev => ({
+                        ...prev,
+                        anomalyDetection: { ...prev.anomalyDetection, enabled: e.target.checked }
+                      }))}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
+                  </label>
+                </div>
+
+                {/* Configuration Controls */}
+                <div className={`space-y-4 p-4 rounded-xl border transition-all ${
+                  enterpriseConfig.anomalyDetection.enabled ? 'bg-amber-50/30 border-amber-200/80' : 'bg-slate-50 border-slate-200 opacity-60'
+                }`}>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                      <SlidersHorizontal className="w-3.5 h-3.5 text-amber-600" />
+                      Z-Score Anomaly Threshold (|Z| &gt; σ)
+                    </label>
+                    <span className="text-xs font-mono font-bold px-2 py-0.5 bg-white rounded border border-slate-200 text-amber-800">
+                      {enterpriseConfig.anomalyDetection.zScoreThreshold.toFixed(1)} σ (99.73% confidence)
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="1.5"
+                    max="5.0"
+                    step="0.1"
+                    disabled={!enterpriseConfig.anomalyDetection.enabled}
+                    value={enterpriseConfig.anomalyDetection.zScoreThreshold}
+                    onChange={(e) => updateEnterpriseConfig(prev => ({
+                      ...prev,
+                      anomalyDetection: { ...prev.anomalyDetection, zScoreThreshold: parseFloat(e.target.value) }
+                    }))}
+                    className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-amber-600"
+                  />
+                  <div className="flex justify-between text-[10px] font-mono text-slate-400">
+                    <span>1.5σ (Sensitive)</span>
+                    <span>3.0σ (Standard Enterprise / 3-Sigma)</span>
+                    <span>5.0σ (Strict Extreme Only)</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-semibold text-slate-700">Moving Window History</label>
+                      <select
+                        disabled={!enterpriseConfig.anomalyDetection.enabled}
+                        value={enterpriseConfig.anomalyDetection.movingWindowSize}
+                        onChange={(e) => updateEnterpriseConfig(prev => ({
+                          ...prev,
+                          anomalyDetection: { ...prev.anomalyDetection, movingWindowSize: parseInt(e.target.value) }
+                        }))}
+                        className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 font-sans focus:ring-1 focus:ring-amber-500"
+                      >
+                        <option value={50}>50 Transactions</option>
+                        <option value={100}>100 Transactions (Recommended)</option>
+                        <option value={250}>250 Transactions</option>
+                        <option value={500}>500 Transactions</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-semibold text-slate-700">Action on Anomaly Breach</label>
+                      <select
+                        disabled={!enterpriseConfig.anomalyDetection.enabled}
+                        value={enterpriseConfig.anomalyDetection.actionOnAnomaly}
+                        onChange={(e) => updateEnterpriseConfig(prev => ({
+                          ...prev,
+                          anomalyDetection: { ...prev.anomalyDetection, actionOnAnomaly: e.target.value as any }
+                        }))}
+                        className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 font-sans focus:ring-1 focus:ring-amber-500"
+                      >
+                        <option value="quarantine_dlq">Quarantine to DLQ (Zero Data Loss)</option>
+                        <option value="fail_pipeline">Fail Pipeline (Strict Invariant Error)</option>
+                        <option value="warn_only">Warning Only (Log &amp; Tag in Report)</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Interactive Simulator Sandbox */}
+                <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 text-white space-y-4 shadow-md">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <span className="text-xs font-mono font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                      <Play className="w-3.5 h-3.5 text-amber-400" />
+                      Live Anomaly Evaluation Simulator
+                    </span>
+                    <span className="text-[10px] font-mono text-slate-400">
+                      Historical Mean: ${(anomalyHistory.reduce((a,b)=>a+b,0)/anomalyHistory.length).toFixed(0)} | N={anomalyHistory.length}
+                    </span>
+                  </div>
+
+                  {/* Preset Scenarios */}
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] font-mono text-slate-400 uppercase font-semibold">Test Ingest Payloads:</span>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => {
+                          setTestTxId('TX-2026-101');
+                          setTestTxAmount('1320.00');
+                          setTestTxDesc('Standard Monthly B2B Invoice');
+                          handleRunAnomalyEvaluation('1320.00', 'TX-2026-101');
+                        }}
+                        className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-900/60 rounded-md text-[11px] font-mono transition-colors flex items-center gap-1 cursor-pointer"
+                      >
+                        🟢 Normal ($1,320.00)
+                      </button>
+                      <button
+                        onClick={() => {
+                          setTestTxId('TX-2026-102');
+                          setTestTxAmount('18500.00');
+                          setTestTxDesc('Accidental 10x Entry Typo');
+                          handleRunAnomalyEvaluation('18500.00', 'TX-2026-102');
+                        }}
+                        className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-rose-400 border border-rose-900/60 rounded-md text-[11px] font-mono transition-colors flex items-center gap-1 cursor-pointer"
+                      >
+                        🔴 10x Outlier ($18,500.00)
+                      </button>
+                      <button
+                        onClick={() => {
+                          setTestTxId('TX-2026-103');
+                          setTestTxAmount('132000.00');
+                          setTestTxDesc('Critical 100x Decimal Slip');
+                          handleRunAnomalyEvaluation('132000.00', 'TX-2026-103');
+                        }}
+                        className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-rose-400 border border-rose-900/60 rounded-md text-[11px] font-mono transition-colors flex items-center gap-1 cursor-pointer"
+                      >
+                        🔴 100x Slip ($132,000.00)
+                      </button>
+                      <button
+                        onClick={() => {
+                          setTestTxId('TX-2026-104');
+                          setTestTxAmount('1780.00');
+                          setTestTxDesc('Borderline High Invoice');
+                          handleRunAnomalyEvaluation('1780.00', 'TX-2026-104');
+                        }}
+                        className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-900/60 rounded-md text-[11px] font-mono transition-colors flex items-center gap-1 cursor-pointer"
+                      >
+                        🟡 Borderline ($1,780.00)
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Manual Inputs & Trigger */}
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-mono text-slate-400">Tx ID</label>
+                      <input
+                        type="text"
+                        value={testTxId}
+                        onChange={(e) => setTestTxId(e.target.value)}
+                        className="w-full bg-slate-800 border border-slate-700 rounded px-2.5 py-1.5 text-xs text-slate-200 font-mono"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-mono text-slate-400">Amount ($)</label>
+                      <input
+                        type="number"
+                        value={testTxAmount}
+                        onChange={(e) => setTestTxAmount(e.target.value)}
+                        className="w-full bg-slate-800 border border-slate-700 rounded px-2.5 py-1.5 text-xs text-slate-200 font-mono font-bold"
+                      />
+                    </div>
+                    <div className="flex items-end">
+                      <button
+                        onClick={() => handleRunAnomalyEvaluation()}
+                        disabled={isEvaluatingAnomaly}
+                        className="w-full py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        <Zap className={`w-3.5 h-3.5 ${isEvaluatingAnomaly ? 'animate-spin' : ''}`} />
+                        {isEvaluatingAnomaly ? 'Evaluating...' : 'Run Z-Score'}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Result Box */}
+                  {anomalyEvalResult && (
+                    <div className={`p-3.5 rounded-lg border text-xs space-y-2 animate-fade-in ${
+                      anomalyEvalResult.status === 'PASSED'
+                        ? 'bg-emerald-950/60 border-emerald-800 text-emerald-200'
+                        : 'bg-rose-950/60 border-rose-800 text-rose-200'
+                    }`}>
+                      <div className="flex items-center justify-between font-mono">
+                        <span className="font-bold flex items-center gap-1.5">
+                          {anomalyEvalResult.status === 'PASSED' ? (
+                            <CheckCircle className="w-4 h-4 text-emerald-400" />
+                          ) : (
+                            <AlertOctagon className="w-4 h-4 text-rose-400" />
+                          )}
+                          Status: {anomalyEvalResult.status}
+                        </span>
+                        <span className="text-[11px] px-2 py-0.5 rounded bg-black/40 border border-white/10">
+                          Calculated Z = {anomalyEvalResult.zScore.toFixed(2)} σ
+                        </span>
+                      </div>
+                      <p className="text-[11px] font-sans leading-relaxed text-slate-300">
+                        {anomalyEvalResult.reason}
+                      </p>
+                      <div className="flex justify-between items-center text-[10px] font-mono text-slate-400 pt-1 border-t border-white/10">
+                        <span>Window Mean (μ): ${anomalyEvalResult.mean.toLocaleString()}</span>
+                        <span>Std Dev (σ): ${anomalyEvalResult.stdev.toLocaleString()}</span>
+                        <span>Threshold: {anomalyEvalResult.threshold.toFixed(1)}σ</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Dead Letter Queue (DLQ) Quarantine List */}
+                <div className="space-y-2 pt-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                      <Inbox className="w-4 h-4 text-rose-600" />
+                      Live Dead Letter Queue (DLQ) Quarantined Records ({dlqItems.filter(d=>d.status==='QUARANTINED').length})
+                    </span>
+                    <button
+                      onClick={() => setDlqItems([])}
+                      className="text-[10px] font-semibold text-slate-400 hover:text-slate-600 underline cursor-pointer"
+                    >
+                      Clear Log
+                    </button>
+                  </div>
+
+                  <div className="border border-slate-200 rounded-xl overflow-hidden text-xs">
+                    <table className="w-full text-left">
+                      <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-mono text-[10px] uppercase">
+                        <tr>
+                          <th className="py-2 px-3">DLQ ID</th>
+                          <th className="py-2 px-3">Tx ID</th>
+                          <th className="py-2 px-3">Amount</th>
+                          <th className="py-2 px-3">Z-Score</th>
+                          <th className="py-2 px-3">Status</th>
+                          <th className="py-2 px-3 text-right">Steward Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 font-sans">
+                        {dlqItems.length === 0 ? (
+                          <tr>
+                            <td colSpan={6} className="py-4 text-center text-slate-400 text-xs">
+                              No records currently quarantined in DLQ. Clean ingestion pipeline.
+                            </td>
+                          </tr>
+                        ) : (
+                          dlqItems.map((item) => (
+                            <tr key={item.id} className="hover:bg-slate-50/60">
+                              <td className="py-2.5 px-3 font-mono font-bold text-slate-700">{item.id}</td>
+                              <td className="py-2.5 px-3 font-mono text-slate-600">{item.txId}</td>
+                              <td className="py-2.5 px-3 font-mono font-bold text-slate-900">${item.amount.toLocaleString()}</td>
+                              <td className="py-2.5 px-3 font-mono text-rose-600 font-bold">{item.zScore}σ</td>
+                              <td className="py-2.5 px-3">
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
+                                  item.status === 'QUARANTINED' ? 'bg-rose-50 text-rose-700 border border-rose-200' :
+                                  item.status === 'OVERRIDDEN' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                                  'bg-slate-100 text-slate-500'
+                                }`}>
+                                  {item.status}
+                                </span>
+                              </td>
+                              <td className="py-2.5 px-3 text-right space-x-1.5">
+                                {item.status === 'QUARANTINED' ? (
+                                  <>
+                                    <button
+                                      onClick={() => {
+                                        setDlqItems(prev => prev.map(d => d.id === item.id ? { ...d, status: 'OVERRIDDEN' } : d));
+                                      }}
+                                      className="px-2 py-0.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[10px] font-semibold transition-colors cursor-pointer"
+                                      title="Approve manual override and release to Golden DB"
+                                    >
+                                      Override &amp; Ingest
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        setDlqItems(prev => prev.map(d => d.id === item.id ? { ...d, status: 'DISCARDED' } : d));
+                                      }}
+                                      className="px-2 py-0.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded text-[10px] font-semibold transition-colors cursor-pointer"
+                                      title="Discard from pipeline"
+                                    >
+                                      Discard
+                                    </button>
+                                  </>
+                                ) : (
+                                  <span className="text-[10px] text-slate-400 italic">Resolved</span>
+                                )}
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ========================================================= */}
+            {/* MODULE 2: SEMANTIC DECISION CACHING (REDIS VECTOR CACHE) */}
+            {/* ========================================================= */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-6 flex flex-col justify-between">
+              <div className="space-y-5">
+                {/* Header & Toggle */}
+                <div className="flex items-start justify-between border-b border-slate-100 pb-4">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 bg-indigo-50 text-indigo-700 rounded-lg border border-indigo-200">
+                        <Database className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="text-base font-bold text-slate-900">Semantic Decision Caching Engine</h4>
+                        <span className="text-xs text-slate-500">Redis Vector Similarity &amp; Sub-5ms Decision Reuse</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Main Toggle */}
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={enterpriseConfig.semanticCache.enabled}
+                      onChange={(e) => updateEnterpriseConfig(prev => ({
+                        ...prev,
+                        semanticCache: { ...prev.semanticCache, enabled: e.target.checked }
+                      }))}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                  </label>
+                </div>
+
+                {/* Configuration Controls */}
+                <div className={`space-y-4 p-4 rounded-xl border transition-all ${
+                  enterpriseConfig.semanticCache.enabled ? 'bg-indigo-50/30 border-indigo-200/80' : 'bg-slate-50 border-slate-200 opacity-60'
+                }`}>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                      <SlidersHorizontal className="w-3.5 h-3.5 text-indigo-600" />
+                      Cosine Similarity Cache Hit Threshold (Score ≥)
+                    </label>
+                    <span className="text-xs font-mono font-bold px-2 py-0.5 bg-white rounded border border-slate-200 text-indigo-800">
+                      {enterpriseConfig.semanticCache.similarityThreshold.toFixed(2)} (90% match)
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0.80"
+                    max="0.99"
+                    step="0.01"
+                    disabled={!enterpriseConfig.semanticCache.enabled}
+                    value={enterpriseConfig.semanticCache.similarityThreshold}
+                    onChange={(e) => updateEnterpriseConfig(prev => ({
+                      ...prev,
+                      semanticCache: { ...prev.semanticCache, similarityThreshold: parseFloat(e.target.value) }
+                    }))}
+                    className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                  />
+                  <div className="flex justify-between text-[10px] font-mono text-slate-400">
+                    <span>0.80 (Aggressive Reuse)</span>
+                    <span>0.90 (Recommended Enterprise)</span>
+                    <span>0.98 (Strict Almost-Exact)</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-semibold text-slate-700">Cache TTL Retention</label>
+                      <select
+                        disabled={!enterpriseConfig.semanticCache.enabled}
+                        value={enterpriseConfig.semanticCache.cacheTtlHours}
+                        onChange={(e) => updateEnterpriseConfig(prev => ({
+                          ...prev,
+                          semanticCache: { ...prev.semanticCache, cacheTtlHours: parseInt(e.target.value) }
+                        }))}
+                        className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 font-sans focus:ring-1 focus:ring-indigo-500"
+                      >
+                        <option value={24}>24 Hours (Daily Flush)</option>
+                        <option value={72}>72 Hours (Standard)</option>
+                        <option value={168}>7 Days (Weekly)</option>
+                        <option value={720}>30 Days (Persistent)</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-semibold text-slate-700">Vector Index Engine</label>
+                      <select
+                        disabled={!enterpriseConfig.semanticCache.enabled}
+                        value={enterpriseConfig.semanticCache.engine}
+                        onChange={(e) => updateEnterpriseConfig(prev => ({
+                          ...prev,
+                          semanticCache: { ...prev.semanticCache, engine: e.target.value as any }
+                        }))}
+                        className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 font-sans focus:ring-1 focus:ring-indigo-500"
+                      >
+                        <option value="redis_vector">Redis Vector Cache (HNSW / Flat Index)</option>
+                        <option value="memory_vector">In-Memory FAISS Vector Cache</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Interactive Vector Cache Simulator Sandbox */}
+                <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 text-white space-y-4 shadow-md">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <span className="text-xs font-mono font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-1.5">
+                      <Zap className="w-3.5 h-3.5 text-indigo-400" />
+                      Live Semantic Vector Cache Simulator
+                    </span>
+                    <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800/60">
+                      Sub-5ms Latency Mode
+                    </span>
+                  </div>
+
+                  {/* Test Query Field Chips */}
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] font-mono text-slate-400 uppercase font-semibold">Incoming Source Fields to Query:</span>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => {
+                          setTestCacheQuery('supplier_vat_id');
+                          setTestCacheDesc('Salesforce Vendor Tax Registration Number');
+                          handleRunCacheLookup('supplier_vat_id');
+                        }}
+                        className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-indigo-900/60 rounded-md text-[11px] font-mono transition-colors flex items-center gap-1 cursor-pointer"
+                      >
+                        ⚡ supplier_vat_id (Salesforce)
+                      </button>
+                      <button
+                        onClick={() => {
+                          setTestCacheQuery('KUNNR_CLIENT_NO');
+                          setTestCacheDesc('SAP SD Customer Identifier');
+                          handleRunCacheLookup('KUNNR_CLIENT_NO');
+                        }}
+                        className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-indigo-900/60 rounded-md text-[11px] font-mono transition-colors flex items-center gap-1 cursor-pointer"
+                      >
+                        ⚡ KUNNR_CLIENT_NO (SAP)
+                      </button>
+                      <button
+                        onClick={() => {
+                          setTestCacheQuery('sales_org_unit');
+                          setTestCacheDesc('Sales Organization Identifier');
+                          handleRunCacheLookup('sales_org_unit');
+                        }}
+                        className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-indigo-900/60 rounded-md text-[11px] font-mono transition-colors flex items-center gap-1 cursor-pointer"
+                      >
+                        ⚡ sales_org_unit (ERP)
+                      </button>
+                      <button
+                        onClick={() => {
+                          setTestCacheQuery('custom_unmapped_xyz_99');
+                          setTestCacheDesc('Unseen Novel Source Field');
+                          handleRunCacheLookup('custom_unmapped_xyz_99');
+                        }}
+                        className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-400 border border-slate-700 rounded-md text-[11px] font-mono transition-colors flex items-center gap-1 cursor-pointer"
+                      >
+                        ❓ custom_unmapped_xyz (Miss)
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Manual Inputs & Trigger */}
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="col-span-2 space-y-1">
+                      <label className="text-[10px] font-mono text-slate-400">Source Attribute Name / Query</label>
+                      <input
+                        type="text"
+                        value={testCacheQuery}
+                        onChange={(e) => setTestCacheQuery(e.target.value)}
+                        className="w-full bg-slate-800 border border-slate-700 rounded px-2.5 py-1.5 text-xs text-slate-200 font-mono"
+                      />
+                    </div>
+                    <div className="flex items-end">
+                      <button
+                        onClick={() => handleRunCacheLookup()}
+                        disabled={isQueryingCache}
+                        className="w-full py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        <Play className={`w-3.5 h-3.5 ${isQueryingCache ? 'animate-spin' : ''}`} />
+                        {isQueryingCache ? 'Searching...' : 'Query Cache'}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Result Box */}
+                  {cacheQueryResult && (
+                    <div className={`p-3.5 rounded-lg border text-xs space-y-2.5 animate-fade-in ${
+                      cacheQueryResult.isHit
+                        ? 'bg-indigo-950/60 border-indigo-700 text-indigo-200'
+                        : 'bg-slate-800/80 border-slate-700 text-slate-300'
+                    }`}>
+                      <div className="flex items-center justify-between font-mono">
+                        <span className="font-bold flex items-center gap-1.5">
+                          {cacheQueryResult.isHit ? (
+                            <CheckCheck className="w-4 h-4 text-emerald-400" />
+                          ) : (
+                            <AlertCircle className="w-4 h-4 text-amber-400" />
+                          )}
+                          {cacheQueryResult.isHit ? '⚡ CACHE HIT (Decision Reused)' : '○ CACHE MISS (Invoking Multi-Signal LLM)'}
+                        </span>
+                        <span className="text-[11px] px-2 py-0.5 rounded bg-black/40 border border-white/10 font-bold">
+                          Cosine Similarity = {cacheQueryResult.similarity.toFixed(3)}
+                        </span>
+                      </div>
+
+                      {cacheQueryResult.isHit ? (
+                        <div className="space-y-1.5 bg-black/30 p-2.5 rounded border border-indigo-500/30 text-[11px] font-sans">
+                          <div className="text-slate-300">
+                            <strong>Matched Prior Approved Decision:</strong> <span className="font-mono text-indigo-300">{cacheQueryResult.matchedQuery}</span>
+                          </div>
+                          <div className="text-slate-300">
+                            <strong>Reused Canonical Target:</strong> <span className="font-mono text-emerald-300 font-bold">{cacheQueryResult.matchedTarget}</span>
+                          </div>
+                          <div className="text-slate-300">
+                            <strong>Reused Transformation Rule:</strong> <code className="font-mono text-amber-300 text-[10px] bg-black/40 px-1 py-0.5 rounded">{cacheQueryResult.matchedRule}</code>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-[11px] text-slate-300 leading-relaxed font-sans">
+                          No previously approved decision exceeded the {enterpriseConfig.semanticCache.similarityThreshold.toFixed(2)} similarity threshold. System automatically routes query to the RRF Multi-Signal scoring &amp; bounded LLM engine.
+                        </p>
+                      )}
+
+                      <div className="flex justify-between items-center text-[10px] font-mono text-slate-400 pt-1 border-t border-white/10">
+                        <span className="text-emerald-400 font-bold">Latency: {cacheQueryResult.latencyMs}ms (vs ~1,450ms)</span>
+                        <span>Tokens Saved: {cacheQueryResult.tokensSaved}</span>
+                        <span className="text-amber-300 font-bold">FinOps: {cacheQueryResult.finOpsSavings}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Pre-Indexed Decision Store Summary */}
+                <div className="space-y-2 pt-1">
+                  <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                    <CheckSquare className="w-4 h-4 text-indigo-600" />
+                    Cached Approved Decision Store (Redis Vector Index)
+                  </span>
+
+                  <div className="border border-slate-200 rounded-xl overflow-hidden text-xs">
+                    <table className="w-full text-left">
+                      <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-mono text-[10px] uppercase">
+                        <tr>
+                          <th className="py-2 px-3">Cached Pattern</th>
+                          <th className="py-2 px-3">Canonical Target</th>
+                          <th className="py-2 px-3">Approved Transform Rule</th>
+                          <th className="py-2 px-3">Steward</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 font-sans text-[11px]">
+                        <tr className="hover:bg-slate-50">
+                          <td className="py-2 px-3 font-mono font-semibold text-slate-800">VEND_TAX_NUM (SAP KNVV)</td>
+                          <td className="py-2 px-3 font-mono text-emerald-600 font-bold">tax_identification_number</td>
+                          <td className="py-2 px-3 font-mono text-slate-600">TRIM + REGEX_REPLACE('^0+', '')</td>
+                          <td className="py-2 px-3 text-slate-500">Steward_Alpha</td>
+                        </tr>
+                        <tr className="hover:bg-slate-50">
+                          <td className="py-2 px-3 font-mono font-semibold text-slate-800">KUNNR (SAP SD Customer)</td>
+                          <td className="py-2 px-3 font-mono text-emerald-600 font-bold">customer_id</td>
+                          <td className="py-2 px-3 font-mono text-slate-600">LPAD(10, '0')</td>
+                          <td className="py-2 px-3 text-slate-500">Steward_Senior</td>
+                        </tr>
+                        <tr className="hover:bg-slate-50">
+                          <td className="py-2 px-3 font-mono font-semibold text-slate-800">VKORG (Sales Organization)</td>
+                          <td className="py-2 px-3 font-mono text-emerald-600 font-bold">sales_organization_id</td>
+                          <td className="py-2 px-3 font-mono text-slate-600">UPPERCASE_STANDARDIZATION</td>
+                          <td className="py-2 px-3 text-slate-500">Steward_Alpha</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ========================================================= */}
+          {/* SECTION 3: STANDALONE PRODUCTION PYTHON CODE EXPORT */}
+          {/* ========================================================= */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+              <div className="space-y-1">
+                <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                  <FileCode className="w-4 h-4 text-indigo-600" />
+                  Production Python Engine &amp; dbt / Great Expectations Suites
+                </h4>
+                <p className="text-xs text-slate-500">
+                  Ready-to-use production scripts for integrating Anomaly Detection (Z-Score + DLQ) and Redis Vector Caching into your standalone ETL/ELT pipelines.
+                </p>
+              </div>
+
+              <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200 shrink-0">
+                <button
+                  onClick={() => setActiveCodeSnippetTab('anomaly_python')}
+                  className={`px-3 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer ${
+                    activeCodeSnippetTab === 'anomaly_python' ? 'bg-white text-slate-900 shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Anomaly Engine (Python)
+                </button>
+                <button
+                  onClick={() => setActiveCodeSnippetTab('cache_python')}
+                  className={`px-3 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer ${
+                    activeCodeSnippetTab === 'cache_python' ? 'bg-white text-slate-900 shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Redis Vector Cache (Python)
+                </button>
+                <button
+                  onClick={() => setActiveCodeSnippetTab('dbt_ge_tests')}
+                  className={`px-3 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer ${
+                    activeCodeSnippetTab === 'dbt_ge_tests' ? 'bg-white text-slate-900 shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Great Expectations / dbt YAML
+                </button>
+              </div>
+            </div>
+
+            {/* Code Display Area */}
+            <div className="relative">
+              <div className="bg-slate-950 p-5 rounded-xl font-mono text-xs text-emerald-400 overflow-x-auto max-h-96 leading-relaxed">
+                {activeCodeSnippetTab === 'anomaly_python' && (
+                  <pre>{`import math
+import statistics
+from typing import Dict, Any, List, Tuple
+
+class SemantraAnomalyDetectionEngine:
+    """
+    Production-grade Real-Time Anomaly Detection Engine for Semantra integrations.
+    Calculates statistical Z-Score against a moving historical window and diverts
+    violating payloads to a Dead Letter Queue (DLQ) to prevent Golden Store corruption.
+    """
+    def __init__(self, z_score_threshold: float = 3.0, window_size: int = 100):
+        self.threshold = z_score_threshold
+        self.window_size = window_size
+        # Moving window of historical baseline transaction amounts
+        self.historical_amounts: List[float] = [1200.0, 1500.0, 1100.0, 1350.0, 1400.0, 1250.0, 1300.0]
+        self.dlq_store: List[Dict[str, Any]] = []
+
+    def evaluate_transaction(self, payload: Dict[str, Any]) -> Tuple[bool, float, str]:
+        """
+        Evaluates incoming transaction in real-time.
+        Returns: (is_anomaly, z_score, action_status)
+        """
+        amount = float(payload.get("amount", 0.0))
+        tx_id = payload.get("transaction_id", "UNKNOWN_TX")
+
+        if len(self.historical_amounts) < 2:
+            self.historical_amounts.append(amount)
+            return False, 0.0, "PASSED_INITIALIZING"
+
+        mean = statistics.mean(self.historical_amounts)
+        stdev = statistics.stdev(self.historical_amounts)
+
+        if stdev == 0:
+            return False, 0.0, "PASSED_ZERO_VARIANCE"
+
+        z_score = (amount - mean) / stdev
+
+        if abs(z_score) > self.threshold:
+            print(f"[ANOMALY ALERT] Tx '{tx_id}' breached {self.threshold}σ threshold! Z-Score: {z_score:.2f} (Amount: \${amount:,.2f})")
+            # Divert to DLQ
+            self.dlq_store.append({
+                "transaction": payload,
+                "z_score": z_score,
+                "reason": f"Z-Score {z_score:.2f} exceeded threshold {self.threshold}σ"
+            })
+            return True, z_score, "QUARANTINED_TO_DLQ"
+
+        # If valid, append to moving historical window
+        self.historical_amounts.append(amount)
+        if len(self.historical_amounts) > self.window_size:
+            self.historical_amounts.pop(0)
+
+        return False, z_score, "PASSED"
+
+# --- RUNTIME EXECUTION TEST ---
+if __name__ == "__main__":
+    engine = SemantraAnomalyDetectionEngine(z_score_threshold=3.0)
+
+    # 1. Regular transaction
+    res1, z1, msg1 = engine.evaluate_transaction({"transaction_id": "TX-101", "amount": 1320.00})
+    print(f"TX-101: Status={msg1}, Z={z1:.2f}")
+
+    # 2. Accidental human entry typo (10x outlier)
+    res2, z2, msg2 = engine.evaluate_transaction({"transaction_id": "TX-102", "amount": 18500.00})
+    print(f"TX-102: Status={msg2}, Z={z2:.2f}")`}</pre>
+                )}
+
+                {activeCodeSnippetTab === 'cache_python' && (
+                  <pre>{`import math
+import time
+from typing import Dict, Any, Tuple, Optional, List
+
+class RedisVectorSemanticCache:
+    """
+    Semantic Vector Caching Engine for Semantra Schema Decisions.
+    Merges vector embeddings with cosine similarity to achieve sub-5ms decision reuse.
+    """
+    def __init__(self, similarity_threshold: float = 0.90, ttl_seconds: int = 259200):
+        self.threshold = similarity_threshold
+        self.ttl = ttl_seconds
+        # In-memory vector store mock (or connect to redis.Redis() with RedisVL)
+        self.cache_store: List[Dict[str, Any]] = [
+            {
+                "query": "VEND_TAX_NUM (SAP KNVV)",
+                "vector": [0.12, 0.85, 0.44, 0.10],
+                "canonical_target": "tax_identification_number",
+                "transformation_rule": "TRIM + REGEX_REPLACE('^0+', '')"
+            },
+            {
+                "query": "KUNNR (SAP SD Customer)",
+                "vector": [0.91, 0.15, 0.32, 0.05],
+                "canonical_target": "customer_id",
+                "transformation_rule": "LPAD(10, '0')"
+            }
+        ]
+
+    def _cosine_similarity(self, v1: list, v2: list) -> float:
+        dot = sum(a * b for a, b in zip(v1, v2))
+        norm1 = math.sqrt(sum(a**2 for a in v1))
+        norm2 = math.sqrt(sum(b**2 for b in v2))
+        return dot / (norm1 * norm2) if norm1 * norm2 > 0 else 0.0
+
+    def query_cache(self, query_vector: list) -> Tuple[bool, Optional[Dict[str, Any]], float]:
+        """Checks if a semantically identical decision exists in Redis Vector Store."""
+        best_score = 0.0
+        best_entry = None
+
+        for item in self.cache_store:
+            sim = self._cosine_similarity(query_vector, item["vector"])
+            if sim > best_score:
+                best_score = sim
+                best_entry = item
+
+        if best_score >= self.threshold and best_entry is not None:
+            return True, best_entry, best_score
+        
+        return False, None, best_score
+
+# --- RUNTIME EXECUTION TEST ---
+if __name__ == "__main__":
+    cache = RedisVectorSemanticCache(similarity_threshold=0.90)
+
+    # Incoming query: 'supplier_vat_id' from Salesforce (near-identical vector to SAP VEND_TAX_NUM)
+    incoming_query_vector = [0.13, 0.84, 0.45, 0.09]
+
+    start = time.perf_counter()
+    is_hit, cached_decision, score = cache.query_cache(incoming_query_vector)
+    elapsed_ms = (time.perf_counter() - start) * 1000
+
+    if is_hit:
+        print(f"[CACHE HIT] Reused decision in {elapsed_ms:.2f}ms with similarity {score:.4f}!")
+        print(f"Target: {cached_decision['canonical_target']} | Rule: {cached_decision['transformation_rule']}")
+    else:
+        print("[CACHE MISS] Route to multi-signal scoring.")`}</pre>
+                )}
+
+                {activeCodeSnippetTab === 'dbt_ge_tests' && (
+                  <pre>{`# dbt schema.yml with Semantra Statistical Anomaly & Invariant Tests
+version: 2
+
+models:
+  - name: canonical_customer_sales_area
+    description: "Golden customer sales area model protected by Semantra Anomaly Shield."
+    columns:
+      - name: customer_id
+        description: "Canonical customer unique identifier"
+        tests:
+          - not_null
+          - unique
+          - dbt_expectations.expect_column_value_lengths_to_equal:
+              value: 10
+
+      - name: invoice_amount
+        description: "Transaction amount with statistical 3-sigma anomaly protection"
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0.0
+              max_value: 50000.00
+          # Custom Semantra Z-Score Invariant Test
+          - semantra_z_score_anomaly_shield:
+              z_threshold: 3.0
+              action_on_failure: quarantine_dlq
+              moving_window_days: 30`}</pre>
+                )}
+              </div>
+
+              {/* Copy Code Action */}
+              <button
+                onClick={() => {
+                  let text = '';
+                  if (activeCodeSnippetTab === 'anomaly_python') {
+                    text = 'class SemantraAnomalyDetectionEngine:\n    ...';
+                  } else if (activeCodeSnippetTab === 'cache_python') {
+                    text = 'class RedisVectorSemanticCache:\n    ...';
+                  } else {
+                    text = 'version: 2\nmodels:\n  - name: canonical_customer_sales_area...';
+                  }
+                  navigator.clipboard?.writeText(text);
+                }}
+                className="absolute top-3 right-3 px-3 py-1.5 bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-mono transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm"
+              >
+                <Copy className="w-3.5 h-3.5" />
+                Copy Code
+              </button>
             </div>
           </div>
         </div>

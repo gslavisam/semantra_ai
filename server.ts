@@ -341,7 +341,7 @@ Perform deep semantic extraction. Identify domain concepts (e.g. SAP KUNNR = Cus
 Semantic Categories MUST be one of: 'datetime', 'monetary', 'classification', 'customer', 'identifier', 'quantity', 'status', 'text', 'other'.`;
 
         const response = await ai.models.generateContent({
-          model: "gemini-3.6-flash",
+          model: "gemini-3.7-flash",
           contents: prompt,
           config: {
             systemInstruction: "You are an enterprise data integration expert analyzing metadata specifications, SAP data dictionaries, and companion JSON/CSV/DDL schema files.",
@@ -462,7 +462,7 @@ For each source field:
 5. Provide a clear, professional explanation referencing companion spec metadata where applicable.`;
 
         const response = await ai.models.generateContent({
-          model: "gemini-3.6-flash",
+          model: "gemini-3.7-flash",
           contents: prompt,
           config: {
             systemInstruction: "You are Semantra's AI workbench assistant. Deliver high quality, explainable semantic mappings with active companion specification analysis.",
@@ -513,7 +513,7 @@ For each source field:
   // AI Copilot Interactive Assistant API (with PII Masking & Circuit Breaker)
   app.post("/api/ai/copilot", async (req, res) => {
     try {
-      const { query, activeTab, workspaceStep, mappingCount, lowConfidenceCount, activeBranch } = req.body;
+      const { query, history, activeTab, workspaceStep, mappingCount, lowConfidenceCount, activeBranch } = req.body;
 
       // 1. Sanitize user query for PII
       const piiCheck = maskServerPII({ query });
@@ -522,7 +522,7 @@ For each source field:
       // 2. Deterministic Fallback Copilot Response
       const fallbackCopilot = () => {
         return {
-          text: `🤖 **Semantra Deterministic Assistant (Offline / Fallback Mode):**\n\nI received your query regarding **${activeTab || 'Workspace'}** (Step: \`${workspaceStep || 'Setup'}\`).\n\n- **Active Governance Branch:** \`${activeBranch || 'main'}\`\n- **Mapped Fields:** \`${mappingCount ?? 5}\` (${lowConfidenceCount ?? 1} low confidence)\n- **Security Status:** 🛡️ PII Masking Active (${piiCheck.detectedCount} entities shielded)\n- **Circuit Breaker:** ${serverCircuitBreaker.getState()}\n\nAll deterministic matching heuristics (Levenshtein, Semantic taxonomy, Knowledge overlays, and Canonical mappings) are active and running at full fidelity.`,
+          text: `🤖 **Semantra Assistant (Offline / Fallback Mode):**\n\nI received your query regarding **${activeTab || 'Workspace'}** (Step: \`${workspaceStep || 'Setup'}\`).\n\n- **Active Governance Branch:** \`${activeBranch || 'main'}\`\n- **Mapped Fields:** \`${mappingCount ?? 5}\` (${lowConfidenceCount ?? 1} low confidence)\n- **Security Status:** 🛡️ PII Masking Active (${piiCheck.detectedCount} entities shielded)\n- **Circuit Breaker:** ${serverCircuitBreaker.getState()}\n\nAll deterministic matching heuristics (Levenshtein, Semantic taxonomy, Knowledge overlays, and Canonical mappings) are active and running at full fidelity.`,
           fallbackUsed: true
         };
       };
@@ -544,6 +544,10 @@ Current User Application Context:
 - PII Sanitization Status: ${piiCheck.detectedCount > 0 ? 'Active Shielding' : 'Clean Input'}
 `;
 
+        const recentHistory = Array.isArray(history) && history.length > 0
+          ? "\nConversation History:\n" + history.slice(-6).map((h: any) => `${h.sender === 'user' ? 'User' : 'Assistant'}: ${h.text}`).join("\n\n")
+          : "";
+
         const systemInstruction = `You are the official built-in AI Copilot of Semantra v1.3 Enterprise Workbench, a deterministic-first semantic mapping, governance, and reverse engineering platform.
 Your purpose is to answer user queries with high precision, always focusing on the context of Semantra's features and workflows:
 1. 5-Step Workspace Pipeline: Setup & Ingestion with PII Shield, Candidates Review with 10-signal RRF scoring, Decision Log with immutable audit trails, Code & Test Generation (PySpark, SQL, dbt, Great Expectations), and Executive Business Analyst Reports.
@@ -552,21 +556,22 @@ Your purpose is to answer user queries with high precision, always focusing on t
 4. Governance & Branching: Git-like draft dictionary overlays, 3-way merge conflict resolution wizard, benchmark delta regression testing, and glossary promotion.
 5. Benchmarks & Golden Master: Ground-truth backtesting (Precision, Recall, F1) with Golden Master Alignment Audit and 1-Click Auto-Healing.
 6. Zero-Trust Security: mTLS client verification, dynamic ABAC field masking, and Hardware HSM digital signatures.
+7. Enterprise Shield & Semantic Cache: Z-Score Real-Time Anomaly Detection, Dead Letter Queue (DLQ), and Redis Vector Semantic Caching.
 
 CRITICAL RULES:
-- The user may ask questions in any language (e.g., Serbian, French, Spanish, German). You MUST translate/interpret their intent, but you MUST ALWAYS answer in clear, professional English.
-- Keep your answers strictly in the context of Semantra application and data integration concepts.
-- If a question is totally out of scope (e.g., recipes, general programming unrelated to data integration, weather), politely state that you are specialized in Semantra and guide them back to its features.
-- Deliver response in beautifully structured Markdown with lists and bold headers.`;
+- LANGUAGE ADAPTABILITY: You MUST respond in the EXACT SAME LANGUAGE that the user used in their question (e.g. if the user asks in Serbian/Croatian/Bosnian, answer in natural, fluent Serbian; if in English, answer in English; if in German, answer in German, etc.).
+- ALWAYS provide direct, helpful, and specific answers to what the user actually asked, rather than repeating generic boilerplate.
+- Keep your answers grounded in Semantra's capabilities and data engineering / integration domain.
+- Format responses cleanly with Markdown headers, bold highlights, and clear bullet points.`;
 
-        const userPrompt = `${contextString}\nUser Query: ${safeQuery}`;
+        const userPrompt = `${contextString}${recentHistory}\nUser Question: ${safeQuery}`;
 
         const response = await ai.models.generateContent({
-          model: "gemini-3.6-flash",
+          model: "gemini-3.7-flash",
           contents: userPrompt,
           config: {
             systemInstruction,
-            temperature: 0.3,
+            temperature: 0.4,
           }
         });
 

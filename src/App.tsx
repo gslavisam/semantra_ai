@@ -21,7 +21,8 @@ import {
   CanonicalConcept,
   CorrectionRule,
   MappingMode,
-  AIModelConfig
+  AIModelConfig,
+  EnterpriseFeaturesConfig
 } from './types';
 
 import { 
@@ -230,16 +231,56 @@ export default function App() {
   const [correctionRules] = useState<CorrectionRule[]>(CORRECTION_RULES);
 
   // AI Model Runtime Configuration
-  const [aiConfig, setAiConfig] = useState<AIModelConfig>({
-    provider: 'gemini',
-    modelName: 'gemini-3.6-flash',
-    temperature: 0.2,
-    topP: 0.95,
-    enableGuardrails: true,
-    promptPacking: 'dynamic',
-    systemInstruction: 'You are Semantra Bounded AI. Evaluate candidate schema mappings strictly against provided closed candidate pairs.',
-    isCustomModel: false
+  const [aiConfig, setAiConfig] = useState<AIModelConfig>(() => {
+    try {
+      const saved = localStorage.getItem('semantra_ai_config_v2');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.modelName === 'gemini-3.6-flash') parsed.modelName = 'gemini-3.7-flash';
+        return parsed;
+      }
+    } catch {}
+    return {
+      provider: 'gemini',
+      modelName: 'gemini-3.7-flash',
+      temperature: 0.2,
+      topP: 0.95,
+      enableGuardrails: true,
+      promptPacking: 'dynamic',
+      systemInstruction: 'You are Semantra Bounded AI. Evaluate candidate schema mappings strictly against provided closed candidate pairs.',
+      isCustomModel: false
+    };
   });
+
+  // Optional Enterprise Features (Anomaly Shield & Semantic Vector Cache)
+  const [enterpriseFeatures, setEnterpriseFeatures] = useState<EnterpriseFeaturesConfig>(() => {
+    try {
+      const saved = localStorage.getItem('semantra_enterprise_features_v2');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return {
+      anomalyDetection: {
+        enabled: false, // Default is OFF / Optional
+        zScoreThreshold: 3.0,
+        movingWindowSize: 100,
+        actionOnAnomaly: 'quarantine_dlq',
+        isolationForestEnabled: false
+      },
+      semanticCache: {
+        enabled: false, // Default is OFF / Optional
+        similarityThreshold: 0.90,
+        cacheTtlHours: 72,
+        engine: 'redis_vector'
+      }
+    };
+  });
+
+  // Sync enterprise features to localStorage
+  React.useEffect(() => {
+    try {
+      localStorage.setItem('semantra_enterprise_features_v2', JSON.stringify(enterpriseFeatures));
+    } catch {}
+  }, [enterpriseFeatures]);
 
   const [selectedPreset, setSelectedPreset] = useState<string>(() => {
     try {
@@ -813,6 +854,7 @@ export default function App() {
                     selectedPreset={selectedPreset} 
                     onPublishToCatalog={handlePublishToCatalog}
                     onUpdateMappings={setMappings}
+                    enterpriseFeatures={enterpriseFeatures}
                   />
                 )}
                 {workspaceStep === 'ba_report' && (
@@ -820,6 +862,7 @@ export default function App() {
                     mappings={mappings} 
                     selectedPreset={selectedPreset} 
                     aiConfig={aiConfig}
+                    enterpriseFeatures={enterpriseFeatures}
                   />
                 )}
               </>
@@ -877,6 +920,8 @@ export default function App() {
           <SystemConfigView 
             aiConfig={aiConfig}
             setAiConfig={setAiConfig}
+            enterpriseFeatures={enterpriseFeatures}
+            setEnterpriseFeatures={setEnterpriseFeatures}
           />
         );
 

@@ -24,7 +24,7 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ 
   activeTab, 
   setActiveTab, 
-  activeModelName = 'gemini-3.6-flash', 
+  activeModelName = 'gemini-3.7-flash', 
   onOpenHelp,
   mappingCount = 5,
   lowConfidenceCount = 1,
