@@ -11,6 +11,10 @@ import { AdminView } from './components/AdminView';
 import { SystemConfigView } from './components/SystemConfigView';
 import { HelpModal } from './components/HelpModal';
 import { ContractReverseEngineeringView } from './components/ContractReverseEngineeringView';
+import { SchemaDriftStudio } from './components/SchemaDriftStudio';
+import { JsonSchemaCoercionStudio } from './components/JsonSchemaCoercionStudio';
+import { EntityResolutionStudio } from './components/EntityResolutionStudio';
+import { TransactionalOutboxStudio } from './components/TransactionalOutboxStudio';
 
 import { 
   MappingRow, 
@@ -924,6 +928,18 @@ export default function App() {
             setEnterpriseFeatures={setEnterpriseFeatures}
           />
         );
+
+      case 'schema_drift':
+        return <SchemaDriftStudio />;
+
+      case 'type_coercion':
+        return <JsonSchemaCoercionStudio />;
+
+      case 'entity_resolution':
+        return <EntityResolutionStudio />;
+
+      case 'transactional_outbox':
+        return <TransactionalOutboxStudio />;
 
       default:
         return null;

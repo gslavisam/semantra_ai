@@ -139,6 +139,34 @@ How can I help you today? You can type any question or pick a quick prompt below
       ];
     }
 
+    if (activeTab === 'schema_drift') {
+      return [
+        { label: '📈 What is Schema Drift?', query: 'How does Semantra detect and adapt to schema drift without crashing downstream pipelines?' },
+        { label: '📦 Dynamic JSONB & DLQ', query: 'How do _unmapped_dynamic_attributes and the Quarantine Dead Letter Queue work?' }
+      ];
+    }
+
+    if (activeTab === 'type_coercion') {
+      return [
+        { label: '🔄 Strict Type Coercion', query: 'How does Semantra coerce formatted numeric strings and non-standard dates without precision loss?' },
+        { label: '💻 Generated dbt SQL / PySpark', query: 'How do the generated dbt SQL and PySpark models implement safe casting functions?' }
+      ];
+    }
+
+    if (activeTab === 'entity_resolution') {
+      return [
+        { label: '👥 Entity Resolution & Fuzzy Match', query: 'How do Jaro-Winkler and Levenshtein algorithms prevent entity duplication in Golden Records?' },
+        { label: '⚖️ Auto-Merge vs Steward Review', query: 'How are similarity thresholds defined for automated merging vs Data Steward review?' }
+      ];
+    }
+
+    if (activeTab === 'transactional_outbox') {
+      return [
+        { label: '📻 Transactional Outbox Pattern', query: 'How do Transactional Outbox and CDC Debezium solve the Dual-Write problem with Kafka?' },
+        { label: '🛡️ At-Least-Once Delivery', query: 'How is zero message loss guaranteed between the relational database and Kafka event streams?' }
+      ];
+    }
+
     return [
       { label: '🚀 First Steps & Guide', query: 'What should be my first step in the app and how do I start?' },
       { label: '🤖 Workspace Status', query: 'What is the current workspace status and recommended next steps?' },

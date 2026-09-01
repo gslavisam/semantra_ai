@@ -666,7 +666,7 @@ export const WorkspaceReview: React.FC<WorkspaceReviewProps> = ({ mappings, setM
                                 <button
                                   onClick={() => handleGenerateSingleAiSignal(row.id)}
                                   className="inline-flex items-center gap-1 text-xs text-indigo-700 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1.5 rounded-lg border border-indigo-200 font-semibold transition-colors font-sans cursor-pointer"
-                                  title="Generiši AI signal za ovo polje i podigni sa nivoa na High confidence"
+                                  title="Generate AI signal for this field to elevate mapping confidence"
                                 >
                                   <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
                                   + AI Signal

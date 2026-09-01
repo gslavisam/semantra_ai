@@ -557,6 +557,11 @@ Your purpose is to answer user queries with high precision, always focusing on t
 5. Benchmarks & Golden Master: Ground-truth backtesting (Precision, Recall, F1) with Golden Master Alignment Audit and 1-Click Auto-Healing.
 6. Zero-Trust Security: mTLS client verification, dynamic ABAC field masking, and Hardware HSM digital signatures.
 7. Enterprise Shield & Semantic Cache: Z-Score Real-Time Anomaly Detection, Dead Letter Queue (DLQ), and Redis Vector Semantic Caching.
+8. 4 Dedicated Enterprise Architecture Studios (Sidebar):
+   - Schema Drift Studio: Automated diff detector, dynamic JSONB packaging for non-breaking additions, Quarantine DLQ routing for breaking missing required fields, and 1-click schema evolution to v1.1.
+   - Type Coercion Studio: JSON schema validation with strict dynamic coercion (numeric string casting, localized date parsing to ISO-8601 UTC, boolean flags) with generated dbt SQL & PySpark code.
+   - Entity Resolution Studio: Master Data Management (MDM) Golden Records deduplication with Jaro-Winkler, Levenshtein, blocking, and threshold-based auto-merge (>=90%) vs Steward review.
+   - Transactional Outbox Studio: Dual-write protection with atomic local DB transactions and CDC (Change Data Capture / Debezium) relay emitting to Kafka event stream with At-Least-Once delivery.
 
 CRITICAL RULES:
 - LANGUAGE ADAPTABILITY: You MUST respond in the EXACT SAME LANGUAGE that the user used in their question (e.g. if the user asks in Serbian/Croatian/Bosnian, answer in natural, fluent Serbian; if in English, answer in English; if in German, answer in German, etc.).

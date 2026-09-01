@@ -54,7 +54,8 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
     { id: 'benchmarks', title: '7. Benchmarks & Learning Curves', icon: TrendingUp },
     { id: 'standalone_web', title: '8. Web Workbench vs Python CLI', icon: Terminal },
     { id: 'workflows', title: '9. Supported Workflows & Navigation (WF-01–13)', icon: GitPullRequest, badge: 'WF-01–13' },
-    { id: 'mtls_hsm_security', title: '10. Zero-Trust Security Triad (mTLS + ABAC + HSM)', icon: Fingerprint, badge: 'Zero-Trust Sec' }
+    { id: 'mtls_hsm_security', title: '10. Zero-Trust Security Triad (mTLS + ABAC + HSM)', icon: Fingerprint, badge: 'Zero-Trust Sec' },
+    { id: 'architecture_studios', title: '11. Architecture Studios (P0–P2 Labs)', icon: Sparkles, badge: 'P0–P2 Studios' }
   ];
 
   const filteredSections = helpSections.filter(sec => 
@@ -2395,6 +2396,159 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                       <span><strong>Production Python Pipeline:</strong> In <em>System Config</em>, copy the complete <code className="text-indigo-300">semantra_zero_trust_pipeline.py</code> module with <code className="text-indigo-300">HardwareSecurityModule</code>, <code className="text-indigo-300">ABACPolicyEngine</code>, and <code className="text-indigo-300">mTLSAuthenticationInterceptor</code>.</span>
                     </li>
                   </ul>
+                </div>
+              </div>
+            )}
+
+            {/* SECTION 11: ARCHITECTURE STUDIOS (P0–P2 ENTERPRISE LABS) */}
+            {activeSection === 'architecture_studios' && (
+              <div className="space-y-6">
+                <div className="border-b border-slate-800 pb-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                      <Sparkles className="w-5 h-5 text-indigo-400" />
+                      Enterprise Architecture Studios (P0–P2 Labs)
+                    </h3>
+                    <span className="px-2 py-0.5 text-[10px] font-mono bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 rounded font-bold">
+                      Enterprise Readiness Labs
+                    </span>
+                  </div>
+                  <p className="text-slate-400 text-xs mt-1">
+                    Dedicated interactive simulation environments designed to validate, harden, and demonstrate four critical enterprise data integration patterns.
+                  </p>
+                </div>
+
+                {/* Executive Purpose */}
+                <div className="p-4 bg-indigo-950/30 border border-indigo-800/50 rounded-xl space-y-2">
+                  <h4 className="text-sm font-bold text-indigo-200 flex items-center gap-2 font-mono">
+                    <Info className="w-4 h-4 text-indigo-400" />
+                    Purpose &amp; Role of Architecture Studios in Semantra
+                  </h4>
+                  <p className="text-slate-300 text-xs leading-relaxed">
+                    While the standard <strong>Core Workbench</strong> (WF-01–06) focuses on automated column mapping, signal scoring, and transformation code generation, production deployments face 4 critical high-risk challenges (P0–P2). <strong>Architecture Studios</strong> serve as specialized interactive laboratories where engineering teams can simulate edge cases, test invariant validation, and generate production-grade <strong>Pydantic V2</strong>, <strong>dbt</strong>, <strong>PySpark</strong>, and <strong>SQL</strong> code before going live.
+                  </p>
+                </div>
+
+                {/* 4 Studios Breakdown Grid */}
+                <div className="space-y-3">
+                  <h4 className="text-xs font-bold text-slate-100 uppercase tracking-wider font-mono flex items-center gap-2">
+                    <Layers className="w-4 h-4 text-indigo-400" />
+                    Overview of the 4 Architecture Studios &amp; Problem-Solution Matrix
+                  </h4>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Studio 1 */}
+                    <div className="p-4 bg-slate-950 border border-slate-800 hover:border-indigo-500/40 rounded-xl space-y-2.5 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-indigo-300 text-xs font-mono flex items-center gap-2">
+                          <GitBranch className="w-4 h-4 text-indigo-400" />
+                          1. Schema Drift Studio
+                        </span>
+                        <span className="px-1.5 py-0.5 text-[9px] font-mono bg-rose-500/20 text-rose-300 rounded border border-rose-500/30 font-bold">P0 Risk</span>
+                      </div>
+                      <p className="text-slate-300 text-[11px] leading-relaxed">
+                        <strong>Problem:</strong> An upstream partner or provider suddenly sends an unexpected field (e.g., <code className="text-indigo-300 font-mono">tax_exemption_code</code>) or omits a required invariant, breaking downstream pipelines.
+                      </p>
+                      <div className="p-2.5 bg-slate-900/90 rounded-lg border border-slate-800 text-[10px] space-y-1 font-mono text-slate-400">
+                        <div><strong className="text-emerald-400">Solution:</strong> Pydantic V2 <code className="text-slate-200">ConfigDict(extra='allow')</code> + Dynamic JSONB Buffer (<code className="text-slate-200">_unmapped_dynamic_attributes</code>).</div>
+                        <div><strong className="text-rose-400">Breaking Drift:</strong> Automated Dead Letter Queue (DLQ) quarantine with zero pipeline disruption.</div>
+                      </div>
+                    </div>
+
+                    {/* Studio 2 */}
+                    <div className="p-4 bg-slate-950 border border-slate-800 hover:border-indigo-500/40 rounded-xl space-y-2.5 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-indigo-300 text-xs font-mono flex items-center gap-2">
+                          <Code className="w-4 h-4 text-indigo-400" />
+                          2. Type Coercion Studio
+                        </span>
+                        <span className="px-1.5 py-0.5 text-[9px] font-mono bg-amber-500/20 text-amber-300 rounded border border-amber-500/30 font-bold">P1 Risk</span>
+                      </div>
+                      <p className="text-slate-300 text-[11px] leading-relaxed">
+                        <strong>Problem:</strong> Heterogeneous and unformatted types from legacy sources (string amounts <code className="text-indigo-300 font-mono">"$14,500.75"</code>, regional European dates <code className="text-indigo-300 font-mono">"31.08.2026"</code>, boolean flags <code className="text-indigo-300 font-mono">"Y"</code>).
+                      </p>
+                      <div className="p-2.5 bg-slate-900/90 rounded-lg border border-slate-800 text-[10px] space-y-1 font-mono text-slate-400">
+                        <div><strong className="text-emerald-400">Solution:</strong> Pydantic V2 <code className="text-slate-200">@field_validator(mode='before')</code> + dbt SQL &amp; PySpark transformation layers.</div>
+                        <div><strong className="text-cyan-400">Guarantee:</strong> 100% type-safe data normalized to strict types before ERP / Canonical persistence.</div>
+                      </div>
+                    </div>
+
+                    {/* Studio 3 */}
+                    <div className="p-4 bg-slate-950 border border-slate-800 hover:border-indigo-500/40 rounded-xl space-y-2.5 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-indigo-300 text-xs font-mono flex items-center gap-2">
+                          <Network className="w-4 h-4 text-indigo-400" />
+                          3. Entity Resolution Studio
+                        </span>
+                        <span className="px-1.5 py-0.5 text-[9px] font-mono bg-indigo-500/20 text-indigo-300 rounded border border-indigo-500/30 font-bold">P1 MDM</span>
+                      </div>
+                      <p className="text-slate-300 text-[11px] leading-relaxed">
+                        <strong>Problem:</strong> Duplicate partner and vendor records ingested under naming variations (e.g., <em>"Bosch d.o.o."</em> vs <em>"Robert Bosch Inc."</em>).
+                      </p>
+                      <div className="p-2.5 bg-slate-900/90 rounded-lg border border-slate-800 text-[10px] space-y-1 font-mono text-slate-400">
+                        <div><strong className="text-emerald-400">Solution:</strong> Deterministic Tax ID (VAT/PIB) matching + Jaro-Winkler / Levenshtein fuzzy matching.</div>
+                        <div><strong className="text-indigo-300">Golden Records:</strong> Automated merge at &ge;90% similarity or Data Steward escalation at 75–89%.</div>
+                      </div>
+                    </div>
+
+                    {/* Studio 4 */}
+                    <div className="p-4 bg-slate-950 border border-slate-800 hover:border-indigo-500/40 rounded-xl space-y-2.5 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-indigo-300 text-xs font-mono flex items-center gap-2">
+                          <Zap className="w-4 h-4 text-indigo-400" />
+                          4. Transactional Outbox Studio
+                        </span>
+                        <span className="px-1.5 py-0.5 text-[9px] font-mono bg-purple-500/20 text-purple-300 rounded border border-purple-500/30 font-bold">P2 Architecture</span>
+                      </div>
+                      <p className="text-slate-300 text-[11px] leading-relaxed">
+                        <strong>Problem:</strong> Dual-Write anomalies in microservices where a database commit succeeds, but event emission to Kafka fails due to network partitions.
+                      </p>
+                      <div className="p-2.5 bg-slate-900/90 rounded-lg border border-slate-800 text-[10px] space-y-1 font-mono text-slate-400">
+                        <div><strong className="text-emerald-400">Solution:</strong> Atomic local ACID transaction (outbox table commit) + Debezium CDC log tailing relay.</div>
+                        <div><strong className="text-purple-300">Guarantee:</strong> <em>At-Least-Once</em> delivery with zero event loss across distributed systems.</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Production Code Artifacts Available */}
+                <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-3">
+                  <h4 className="text-xs font-bold text-slate-100 uppercase tracking-wider font-mono flex items-center gap-2 text-indigo-400">
+                    <Code className="w-4 h-4 text-indigo-400" />
+                    Available Production Code Artifacts
+                  </h4>
+                  <p className="text-slate-400 text-xs leading-relaxed">
+                    Each studio includes a dedicated <strong>Production Code &amp; Pipelines</strong> tab with one-click exportable implementations:
+                  </p>
+                  <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] font-mono text-slate-300">
+                    <li className="p-2 bg-slate-900 rounded border border-slate-800 flex items-center gap-2">
+                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Pydantic V2 Model &amp; Validator Modules</span>
+                    </li>
+                    <li className="p-2 bg-slate-900 rounded border border-slate-800 flex items-center gap-2">
+                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>dbt Schema Invariants &amp; SQL Models</span>
+                    </li>
+                    <li className="p-2 bg-slate-900 rounded border border-slate-800 flex items-center gap-2">
+                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>PySpark DataFrame Streaming Transformations</span>
+                    </li>
+                    <li className="p-2 bg-slate-900 rounded border border-slate-800 flex items-center gap-2">
+                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>PostgreSQL &amp; SQLite ACID Outbox DDL</span>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Where to Access */}
+                <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
+                  <h4 className="font-bold text-slate-200 text-xs font-sans flex items-center gap-2">
+                    <Sliders className="w-4 h-4 text-indigo-400" />
+                    How to Access in Semantra
+                  </h4>
+                  <p className="text-xs text-slate-400 leading-relaxed font-sans">
+                    In the left navigation sidebar, expand the <strong>Architecture Studios (P0–P2)</strong> accordion menu. Click on any studio to launch its live interactive simulation environment.
+                  </p>
                 </div>
               </div>
             )}
