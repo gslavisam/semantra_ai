@@ -40,7 +40,7 @@ import {
   ExternalLink,
   Lock
 } from 'lucide-react';
-import { ContractParsedEntity, ContractRelationship, ContractConstraint } from '../types';
+import { ContractParsedEntity, ContractRelationship, ContractConstraint, MappingRow, CanonicalConcept } from '../types';
 
 // Sample default presets for various enterprise application integration contracts
 
@@ -938,10 +938,16 @@ export function parseTalendXml(text: string, fileName: string): any {
 }
 
 interface ContractReverseEngineeringViewProps {
-  onImportToWorkspace?: (mappings: any[]) => void;
+  onImportToWorkspace?: (mappings: MappingRow[], sourceSystem: string, targetSystem: string) => void;
+  onPromoteCanonicalConcept?: (concept: CanonicalConcept) => void;
+  promotedConceptIds?: string[];
 }
 
-export function ContractReverseEngineeringView({ onImportToWorkspace }: ContractReverseEngineeringViewProps) {
+export function ContractReverseEngineeringView({
+  onImportToWorkspace,
+  onPromoteCanonicalConcept,
+  promotedConceptIds = []
+}: ContractReverseEngineeringViewProps) {
   const [activeStep, setActiveStep] = useState<ReverseEngineeringStep>('ingest_audit');
   const [presetKey, setPresetKey] = useState<'sap_salesforce' | 'sap_servicenow' | 'workday_timeclock' | 'talend_tmap'>('sap_salesforce');
   const [rawContractJson, setRawContractJson] = useState<string>(
@@ -953,6 +959,8 @@ export function ContractReverseEngineeringView({ onImportToWorkspace }: Contract
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedEntityFilter, setSelectedEntityFilter] = useState<'all' | 'enabled' | 'disabled'>('all');
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [locallyPromotedConcepts, setLocallyPromotedConcepts] = useState<string[]>([]);
+  const [transferSuccessMessage, setTransferSuccessMessage] = useState<string | null>(null);
 
   const [talendSourceSchema, setTalendSourceSchema] = useState<any>(null);
   const [exportTab, setExportTab] = useState<'json' | 'talend_xml' | 'talend_java'>('json');
@@ -1132,11 +1140,108 @@ export function ContractReverseEngineeringView({ onImportToWorkspace }: Contract
     setTimeout(() => {
       setIsSyncingAssertions(false);
       setConstraintsList(prev => prev.map(c => ({ ...c, isSyncedToAssertion: true })));
+      try {
+        const activeConstraints = constraintsList.map(c => ({ ...c, isSyncedToAssertion: true }));
+        localStorage.setItem('semantra_workspace_invariants', JSON.stringify(activeConstraints));
+      } catch {}
       setAssertionsSyncSuccessMessage(
         `Synchronized ${smartArtifacts.constraints.length} schema constraints & ${smartArtifacts.relationships.length} foreign key invariants to Semantra Assertions Engine.`
       );
       setTimeout(() => setAssertionsSyncSuccessMessage(null), 6000);
     }, 600);
+  };
+
+  // Convert reverse-engineered entity fields & mappings directly into Mode 1 MappingRows
+  const handleExportToMode1Pipeline = () => {
+    if (!onImportToWorkspace) return;
+    const rows: MappingRow[] = [];
+
+    if (contractObj?.detected_mappings && Array.isArray(contractObj.detected_mappings) && contractObj.detected_mappings.length > 0) {
+      contractObj.detected_mappings.forEach((m: any, idx: number) => {
+        rows.push({
+          id: `rev_map_${idx}_${Date.now()}`,
+          sourceField: m.sourceField || `source_col_${idx}`,
+          sourceDesc: `Talend tMap input column (${m.sourceType || 'id_String'})`,
+          sourceType: m.sourceType || 'string',
+          targetField: m.targetField || `target_col_${idx}`,
+          targetDesc: `Talend tMap output column (${m.targetType || 'id_String'})`,
+          targetType: m.targetType || 'string',
+          confidence: 'HIGH',
+          score: 0.94,
+          signals: ['EXACT_NAME', 'CANONICAL_SYNONYM'],
+          explanation: `Reverse-engineered from Talend expression: ${m.expression || 'direct column map'}`,
+          transformation: m.expression,
+          isApproved: true,
+          decisionStatus: 'accepted'
+        });
+      });
+    } else {
+      let counter = 0;
+      entitiesList.filter(e => e.enabled).forEach(ent => {
+        const srcSys = ent.sourceEntity || sourceSystem;
+        const tgtSys = ent.targetEntity || targetSystem;
+
+        if (ent.fields && typeof ent.fields === 'object') {
+          const fieldEntries = Array.isArray(ent.fields)
+            ? ent.fields.map(f => [typeof f === 'string' ? f : f.name || String(f), f])
+            : Object.entries(ent.fields);
+
+          fieldEntries.forEach(([fieldKey, sampleVal]) => {
+            counter++;
+            const cleanF = String(fieldKey);
+            rows.push({
+              id: `rev_map_${counter}_${Date.now()}`,
+              sourceField: `${ent.key}.${cleanF}`,
+              sourceDesc: `Extracted from ${srcSys} entity [${ent.key}]`,
+              sourceType: typeof sampleVal === 'number' ? 'decimal' : 'string',
+              targetField: `${tgtSys}.${cleanF}`,
+              targetDesc: `Mapped target attribute in ${tgtSys}`,
+              targetType: typeof sampleVal === 'number' ? 'decimal' : 'string',
+              confidence: 'HIGH',
+              score: 0.92,
+              signals: ['EXACT_NAME', 'CANONICAL_SYNONYM'],
+              explanation: `Reverse-engineered from ${sourceSystem} ↔ ${targetSystem} integration contract.`,
+              isApproved: true,
+              decisionStatus: 'accepted'
+            });
+          });
+        }
+      });
+    }
+
+    if (rows.length > 0) {
+      setTransferSuccessMessage(`Transferred ${rows.length} reverse-engineered field mappings into Mode 1 Mapping Pipeline!`);
+      setTimeout(() => {
+        onImportToWorkspace(rows, sourceSystem, targetSystem);
+      }, 500);
+    }
+  };
+
+  // Promote a proposed canonical model into the organization's Canonical Catalog
+  const handlePromoteCanonicalProposal = (can: any) => {
+    const conceptId = can.canonicalName.toLowerCase();
+    const concept: CanonicalConcept = {
+      id: `can_mode2_${Date.now()}_${conceptId}`,
+      concept_id: conceptId,
+      display_name: can.canonicalName.replace(/_/g, ' '),
+      entity: can.canonicalName,
+      attribute: can.attributes.join(', '),
+      data_type: 'OBJECT / RECORD',
+      source: `Mode 2: ${sourceSystem} ↔ ${targetSystem}`,
+      usage_count: 1,
+      field_context_count: can.attributes.length,
+      active_overlay_entry_count: 1,
+      source_systems: `${sourceSystem}, ${targetSystem}`,
+      business_domains: can.domain,
+      base_aliases: can.attributes.slice(0, 4).join(', '),
+      hasOverlay: true,
+      description: `Synthesized Canonical Model from ${sourceSystem} ↔ ${targetSystem} contract integration.`
+    };
+
+    setLocallyPromotedConcepts(prev => [...prev, conceptId]);
+    if (onPromoteCanonicalConcept) {
+      onPromoteCanonicalConcept(concept);
+    }
   };
 
   const handleToggleConstraintSync = (constraintId: string) => {
@@ -1754,10 +1859,39 @@ export function ContractReverseEngineeringView({ onImportToWorkspace }: Contract
               <strong className="text-cyan-400">{smartArtifacts.relationships.length} FKs</strong>
             </div>
           </div>
+
+          {/* Mode 1 Cross-Workbench Bridge Card in Sidebar */}
+          <div className="bg-gradient-to-br from-indigo-950/80 to-slate-900 border border-indigo-500/40 rounded-xl p-4 space-y-3">
+            <div className="flex items-center gap-2 text-xs font-bold text-indigo-200 font-mono">
+              <ArrowRight className="w-4 h-4 text-emerald-400" />
+              <span>Bridge to Mode 1 Pipeline</span>
+            </div>
+            <p className="text-[11px] text-slate-300 leading-relaxed font-sans">
+              Transfer reverse-engineered entities and fields into Semantra's Mode 1 Mapping Workbench for Trust Review, Golden Master benchmarks &amp; dbt/PySpark generation.
+            </p>
+            <button
+              onClick={handleExportToMode1Pipeline}
+              className="w-full py-2 px-3 bg-indigo-600 hover:bg-indigo-500 text-white font-mono text-xs font-semibold rounded-lg shadow-sm flex items-center justify-center gap-2 cursor-pointer transition-colors"
+            >
+              <Layers className="w-3.5 h-3.5 text-indigo-200" />
+              <span>Load into Mode 1 Pipeline</span>
+            </button>
+          </div>
         </div>
 
         {/* RIGHT MAIN WORKSPACE CONTENT */}
         <div className="lg:col-span-8 xl:col-span-9 min-w-0 space-y-6">
+
+          {/* Transfer to Mode 1 Success Banner */}
+          {transferSuccessMessage && (
+            <div className="p-3.5 bg-emerald-950/80 border border-emerald-700/80 rounded-xl flex items-center justify-between text-xs font-mono text-emerald-300 shadow-sm animate-fade-in">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>{transferSuccessMessage}</span>
+              </div>
+              <span className="text-[10px] text-emerald-400/80">Switching to Mode 1 Review...</span>
+            </div>
+          )}
 
       {/* STEP 1: CONTRACT INGEST & HEALTH AUDIT */}
       {activeStep === 'ingest_audit' && (
@@ -2025,6 +2159,15 @@ export function ContractReverseEngineeringView({ onImportToWorkspace }: Contract
                     </button>
                   ))}
                 </div>
+
+                <button
+                  onClick={handleExportToMode1Pipeline}
+                  className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold font-mono flex items-center gap-1.5 shadow-xs cursor-pointer transition-colors shrink-0"
+                  title="Transfer reverse-engineered entity fields into Mode 1 Mapping Pipeline"
+                >
+                  <Layers className="w-3.5 h-3.5 text-indigo-200" />
+                  <span>Transfer to Mode 1</span>
+                </button>
               </div>
             </div>
 
@@ -2536,6 +2679,40 @@ ${smartArtifacts.relationships.map(r => `    assert_referential_integrity(
                   <div className="text-[11px] text-slate-500">
                     <span className="font-semibold text-slate-700">Attributes:</span> {can.attributes.join(', ')}
                   </div>
+
+                  {/* Promote to Catalog Action */}
+                  {(() => {
+                    const conceptId = can.canonicalName.toLowerCase();
+                    const isPromoted = promotedConceptIds.includes(conceptId) || locallyPromotedConcepts.includes(conceptId);
+                    return (
+                      <div className="pt-2 border-t border-slate-200/80 flex items-center justify-between">
+                        <span className="text-[10px] font-mono text-slate-400">
+                          {isPromoted ? 'Stewardship: Active' : 'Stewardship: Candidate'}
+                        </span>
+                        <button
+                          onClick={() => handlePromoteCanonicalProposal(can)}
+                          disabled={isPromoted}
+                          className={`px-2.5 py-1 rounded text-xs font-semibold font-mono flex items-center gap-1.5 transition-all cursor-pointer ${
+                            isPromoted
+                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 cursor-default'
+                              : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs'
+                          }`}
+                        >
+                          {isPromoted ? (
+                            <>
+                              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                              <span>In Canonical Catalog</span>
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="w-3 h-3" />
+                              <span>Promote to Catalog</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    );
+                  })()}
                 </div>
               ))}
             </div>

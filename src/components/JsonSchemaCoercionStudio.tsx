@@ -443,12 +443,15 @@ if __name__ == "__main__":
       <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 border border-slate-800 rounded-2xl p-6 text-white shadow-xl">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1.5">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-blue-500/20 text-blue-300 border border-blue-500/30">
                 P0 Data Quality &amp; Casting
               </span>
               <span className="px-2 py-0.5 rounded-md text-[11px] font-mono bg-slate-800 text-slate-300 border border-slate-700">
                 ISO-8601 &amp; Strict IEEE-754
+              </span>
+              <span className="px-2 py-0.5 rounded-md text-[11px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">
+                Execution Target: dbt (Snowflake) / PySpark (Databricks)
               </span>
             </div>
             <h2 className="text-xl font-bold font-sans tracking-tight flex items-center gap-2">
@@ -456,7 +459,7 @@ if __name__ == "__main__":
               JSON Schema Validation &amp; Dynamic Type Coercion
             </h2>
             <p className="text-sm text-slate-300 max-w-3xl leading-relaxed">
-              Eliminates runtime pipeline crashes from legacy ERP data formats (e.g. numeric strings, localized dates, flags). Performs safe strict coercion before sending clean payloads to the mapper.
+              <strong>Control Plane Sandbox:</strong> Eliminates runtime pipeline crashes from legacy ERP data formats (e.g. numeric strings, localized dates, flags). Semantra models type invariants and compiles standard dbt SQL, PySpark, and Pydantic V2 modules that execute directly in your existing lakehouse or warehouse.
             </p>
           </div>
 

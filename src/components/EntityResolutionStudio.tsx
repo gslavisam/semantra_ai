@@ -305,12 +305,15 @@ class EntityResolutionEngine:
       <div className="bg-gradient-to-r from-slate-900 via-teal-950 to-slate-900 border border-slate-800 rounded-2xl p-6 text-white shadow-xl">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1.5">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-teal-500/20 text-teal-300 border border-teal-500/30">
                 P1 MDM Master Data Management
               </span>
               <span className="px-2 py-0.5 rounded-md text-[11px] font-mono bg-slate-800 text-slate-300 border border-slate-700">
                 Blocking &amp; Jaro-Winkler Heuristics
+              </span>
+              <span className="px-2 py-0.5 rounded-md text-[11px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">
+                Execution Target: Databricks / Snowflake / Python MDM
               </span>
             </div>
             <h2 className="text-xl font-bold font-sans tracking-tight flex items-center gap-2">
@@ -318,7 +321,7 @@ class EntityResolutionEngine:
               Entity Resolution &amp; Fuzzy Matching (Golden Records)
             </h2>
             <p className="text-sm text-slate-300 max-w-3xl leading-relaxed">
-              Deduplicates vendor, customer, and product records across SAP, Salesforce, and Oracle sources. Auto-merges high-confidence matches and prevents downstream database contamination.
+              <strong>Control Plane Sandbox:</strong> Deduplicates vendor and customer records across disparate ERPs. Semantra tunes match thresholds and compiles deterministic + fuzzy deduplication scripts that run directly on your Databricks, Snowflake, or Python worker clusters.
             </p>
           </div>
           <button

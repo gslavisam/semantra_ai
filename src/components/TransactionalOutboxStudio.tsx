@@ -268,12 +268,15 @@ class SemantraTransactionalOutboxEngine:
       <div className="bg-gradient-to-r from-slate-900 via-purple-950 to-slate-900 border border-slate-800 rounded-2xl p-6 text-white shadow-xl">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1.5">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-purple-500/20 text-purple-300 border border-purple-500/30">
                 P2 Distributed Reliability
               </span>
               <span className="px-2 py-0.5 rounded-md text-[11px] font-mono bg-slate-800 text-slate-300 border border-slate-700">
                 CDC Debezium Log Tailing
+              </span>
+              <span className="px-2 py-0.5 rounded-md text-[11px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold">
+                Execution Target: PostgreSQL WAL &amp; Apache Kafka
               </span>
             </div>
             <h2 className="text-xl font-bold font-sans tracking-tight flex items-center gap-2">
@@ -281,7 +284,7 @@ class SemantraTransactionalOutboxEngine:
               Transactional Outbox Pattern &amp; CDC Kafka Relay
             </h2>
             <p className="text-sm text-slate-300 max-w-3xl leading-relaxed">
-              Solves the Dual-Write Problem. Atomic local transactions write to the Canonical database and Outbox table simultaneously, while a CDC process guarantees At-Least-Once delivery to Kafka.
+              <strong>Control Plane Sandbox:</strong> Solves the Dual-Write Problem. Semantra models and compiles atomic local ACID transactions and CDC Debezium connectors for your existing PostgreSQL database and Apache Kafka cluster, guaranteeing At-Least-Once event delivery.
             </p>
           </div>
 

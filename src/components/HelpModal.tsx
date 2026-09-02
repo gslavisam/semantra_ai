@@ -30,7 +30,12 @@ import {
   Shield,
   Hash,
   Lock,
-  FileCheck
+  FileCheck,
+  ArrowLeftRight,
+  Server,
+  FileCheck2,
+  Clock,
+  FolderGit2
 } from 'lucide-react';
 
 interface HelpModalProps {
@@ -48,14 +53,15 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
     { id: 'signals_scoring', title: '1. Mapping Signals & Scoring Reference', icon: Calculator, badge: 'Core Theory' },
     { id: 'mental_model', title: '2. Canonical, Knowledge & Overlay Model', icon: GitBranch, badge: 'Core Theory' },
     { id: 'overview', title: '3. Overview & Architecture', icon: BookOpen },
-    { id: 'pipeline', title: '4. Workspace Mapping Pipeline', icon: Layers },
-    { id: 'bounded_ai', title: '5. Bounded AI Gate & Rules', icon: Sparkles },
+    { id: 'pipeline', title: '4. Workspace Mapping Pipeline', icon: Layers, badge: 'Closed-Loop (M1 ⇄ M2)' },
+    { id: 'bounded_ai', title: '5. Bounded AI Gate & Rules', icon: Sparkles, badge: 'AI Surfaces (1-14)' },
     { id: 'governance', title: '6. Governance & Canonical Catalog', icon: ShieldCheck },
     { id: 'benchmarks', title: '7. Benchmarks & Learning Curves', icon: TrendingUp },
     { id: 'standalone_web', title: '8. Web Workbench vs Python CLI', icon: Terminal },
     { id: 'workflows', title: '9. Supported Workflows & Navigation (WF-01–13)', icon: GitPullRequest, badge: 'WF-01–13' },
     { id: 'mtls_hsm_security', title: '10. Zero-Trust Security Triad (mTLS + ABAC + HSM)', icon: Fingerprint, badge: 'Zero-Trust Sec' },
-    { id: 'architecture_studios', title: '11. Architecture Studios (P0–P2 Labs)', icon: Sparkles, badge: 'P0–P2 Studios' }
+    { id: 'architecture_studios', title: '11. Architecture Studios (P0–P2 Labs)', icon: Sparkles, badge: 'P0–P2 Studios' },
+    { id: 'data_contracts_gitops', title: '12. Data Contracts (ODC) & GitOps CI/CD', icon: FileCheck2, badge: 'Data Mesh & GitOps' }
   ];
 
   const filteredSections = helpSections.filter(sec => 
@@ -923,6 +929,19 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                   </div>
                 </div>
 
+                {/* Mode 1 ⇄ Mode 2 Bridge Banner */}
+                <div className="p-3 bg-gradient-to-r from-emerald-950/40 via-slate-900 to-indigo-950/40 border border-slate-800 rounded-xl flex items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center gap-2 text-slate-300">
+                    <ArrowLeftRight className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>
+                      <strong className="text-white font-mono">Closed-Loop Integration:</strong> Deconstruct legacy contracts &amp; Talend ETL jobs in Mode 2, then bridge them directly into Mode 1 with 1-click for Trust Review, Golden Master benchmarking, and production dbt/PySpark generation.
+                    </span>
+                  </div>
+                  <span className="shrink-0 px-2 py-0.5 text-[10px] font-mono bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded">
+                    Unified Cycle
+                  </span>
+                </div>
+
                 <div className="border-t border-slate-800 pt-4">
                   <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider font-mono mb-3 text-emerald-400 flex items-center gap-2">
                     <Sliders className="w-4 h-4 text-emerald-400" />
@@ -1006,7 +1025,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                 <div className="border-t border-slate-800 pt-6 mt-6">
                   <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider font-mono mb-3 text-indigo-400 flex items-center gap-2">
                     <Network className="w-4 h-4 text-indigo-400" />
-                    Mode 2: Contract Reverse Engineering Pipeline (Steps 1–5)
+                    Mode 2: Contract Reverse Engineering Pipeline (Steps 1–7)
                   </h4>
                 </div>
 
@@ -1016,12 +1035,12 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 font-bold text-white text-xs font-mono">
                         <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded text-[10px]">STEP 1</span>
-                        <span>Contract Ingest & Health Audit</span>
+                        <span>Contract Ingest &amp; Health Audit</span>
                       </div>
-                      <span className="text-[10px] font-mono text-indigo-400">Syntax & Health Score</span>
+                      <span className="text-[10px] font-mono text-indigo-400">Syntax &amp; Health Score</span>
                     </div>
                     <p className="text-slate-300 text-xs leading-relaxed">
-                      Paste or upload raw integration contract JSON/XML for ANY two applications (e.g. SAP S/4HANA ↔ Salesforce CRM, SAP ↔ ServiceNow, or Workday ↔ TimeClock presets). Automatically runs a 10-point structural health audit checking for missing entity trees, unconfigured OData/WSDL endpoint URLs, disabled sync entities with active URLs, and target attribute collisions. Offers one-click automated syntax and contract repair fixes.
+                      Paste or upload raw integration contract JSON/XML for ANY enterprise systems (e.g. SAP S/4HANA &harr; Salesforce CRM, SAP Logistics &harr; ServiceNow ITAM, Workday HR &harr; TimeClock, or Talend tMap XML presets). Automatically executes a multi-point structural health audit checking for missing entity trees, unconfigured OData/WSDL endpoint URLs, disabled sync entities with active URLs, and target attribute collisions, with 1-click automated syntax repairs.
                     </p>
                   </div>
 
@@ -1030,12 +1049,12 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 font-bold text-white text-xs font-mono">
                         <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded text-[10px]">STEP 2</span>
-                        <span>Deconstruction & Pair Mapping</span>
+                        <span>Payload Deconstruction &amp; Entity Matching</span>
                       </div>
-                      <span className="text-[10px] font-mono text-indigo-400">Entity Breakdown</span>
+                      <span className="text-[10px] font-mono text-indigo-400">Entity Breakdown &amp; Bridge</span>
                     </div>
                     <p className="text-slate-300 text-xs leading-relaxed">
-                      Flattens complex nested API JSON structures into explicit source-to-target entity mapping pairs (e.g. SAP <code className="text-indigo-300 font-mono">customer_master</code> ↔ Salesforce <code className="text-indigo-300 font-mono">Account</code>, SAP <code className="text-indigo-300 font-mono">plant_material</code> ↔ ServiceNow <code className="text-indigo-300 font-mono">alm_hardware</code>, or Workday <code className="text-indigo-300 font-mono">worker</code> ↔ TimeClock <code className="text-indigo-300 font-mono">employee</code>). Enables interactive toggling of entity sync statuses, field-level inspection, search filtering, and OData/WSDL endpoint verification.
+                      Flattens complex nested API structures into explicit source-to-target entity pairs (e.g. SAP <code className="text-indigo-300 font-mono">customer_master</code> &harr; Salesforce <code className="text-indigo-300 font-mono">Account</code>, SAP <code className="text-indigo-300 font-mono">plant_material</code> &harr; ServiceNow <code className="text-indigo-300 font-mono">alm_hardware</code>, or Workday <code className="text-indigo-300 font-mono">worker</code> &harr; TimeClock <code className="text-indigo-300 font-mono">employee</code>). Enables interactive toggling of entity sync states, field-level inspection, search filtering, and endpoint verification. Features the <strong>&quot;Transfer to Mode 1&quot; bridge</strong> to inject all deconstructed entity pairs directly into the Mode 1 Trust Review pipeline with one click.
                     </p>
                   </div>
 
@@ -1044,12 +1063,12 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 font-bold text-white text-xs font-mono">
                         <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded text-[10px]">STEP 3</span>
-                        <span>Entity Relationship Graph &amp; Smart FK Analysis</span>
+                        <span>Smart Graph &amp; Referential Integrity Analysis</span>
                       </div>
-                      <span className="text-[10px] font-mono text-indigo-400">FK Graph Discovery</span>
+                      <span className="text-[10px] font-mono text-indigo-400">FK &amp; Cardinality Discovery</span>
                     </div>
                     <p className="text-slate-300 text-xs leading-relaxed">
-                      Constructs an interactive topological foreign-key graph connecting source and target entity trees. Automatically deduces relation cardinalities (<code className="text-indigo-300 font-mono">1:1</code>, <code className="text-indigo-300 font-mono">1:N</code>, <code className="text-indigo-300 font-mono">N:M</code>) and integrity behaviors (<code className="text-indigo-300 font-mono">CASCADE</code> vs <code className="text-indigo-300 font-mono">RESTRICT</code>). Allows integration architects to add custom virtual joins and verify parent-child sync ordering.
+                      Constructs an interactive topological foreign-key graph connecting source and target entity trees. Automatically deduces relation cardinalities (<code className="text-indigo-300 font-mono">1:1</code>, <code className="text-indigo-300 font-mono">1:N</code>, <code className="text-indigo-300 font-mono">N:1</code>) and delete actions (<code className="text-indigo-300 font-mono">CASCADE</code> vs <code className="text-indigo-300 font-mono">RESTRICT</code>). Allows integration architects to add custom virtual joins and verify parent-child sync ordering.
                     </p>
                   </div>
 
@@ -1058,12 +1077,12 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 font-bold text-white text-xs font-mono">
                         <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded text-[10px]">STEP 4</span>
-                        <span>Canonical Model Synthesis &amp; Contract Invariant Assertions</span>
+                        <span>Contract Quality Assertions &amp; Invariants Sync</span>
                       </div>
-                      <span className="text-[10px] font-mono text-indigo-400">Canonical Extraction &amp; QA</span>
+                      <span className="text-[10px] font-mono text-indigo-400">Invariants &amp; Test Suite</span>
                     </div>
                     <p className="text-slate-300 text-xs leading-relaxed">
-                      Synthesizes vendor-agnostic Canonical Integration Models (e.g., <code className="text-indigo-300 font-mono">Canonical_Worker</code>, <code className="text-indigo-300 font-mono">Canonical_JobProfile</code>, <code className="text-indigo-300 font-mono">Canonical_ShiftBlock</code>) with calculated confidence scores (&gt; 90%). Automatically derives mathematical contract invariants (nullability, range constraints, enum bounds) and allows <strong>1-Click Sync to Workspace Test Sets</strong>.
+                      Extracts and enforces critical enterprise constraints (Primary Keys, NOT NULL checks, non-negative amounts, ISO currency sets, and PII masking rules). Synchronizes these rules directly into Semantra's executable Test Sets and Great Expectations / dbt test invariants.
                     </p>
                   </div>
 
@@ -1072,12 +1091,12 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 font-bold text-white text-xs font-mono">
                         <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded text-[10px]">STEP 5</span>
-                        <span>Refined Contract &amp; Multi-Target Code Export</span>
+                        <span>Canonical Model Synthesis &amp; Catalog Promotion</span>
                       </div>
-                      <span className="text-[10px] font-mono text-indigo-400">Artifact Generation</span>
+                      <span className="text-[10px] font-mono text-indigo-400">Domain Models &amp; Stewardship</span>
                     </div>
                     <p className="text-slate-300 text-xs leading-relaxed">
-                      Generates cleaned, auto-repaired integration contract JSON/YAML payloads alongside executable Python, PySpark, and TypeScript payload transformation code for enterprise ESB/middleware integration (MuleSoft, Boomi, Apache Camel, or custom API gateways).
+                      Synthesizes vendor-agnostic Canonical Integration Models (e.g., <code className="text-indigo-300 font-mono">Canonical_Worker</code>, <code className="text-indigo-300 font-mono">Canonical_JobProfile</code>, <code className="text-indigo-300 font-mono">Canonical_CustomerMaster</code>) with JSON Schema specifications and high confidence scoring (&gt; 90%). Features direct <strong>&quot;Promote to Catalog&quot;</strong> integration: with one click, proposed models are promoted into the organization's central Canonical Catalog with populated domain attributes and aliases.
                     </p>
                   </div>
 
@@ -1086,12 +1105,91 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 font-bold text-white text-xs font-mono">
                         <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded text-[10px]">STEP 6</span>
+                        <span>Refined Contract &amp; Multi-Target Code Export</span>
+                      </div>
+                      <span className="text-[10px] font-mono text-indigo-400">Artifact Generation</span>
+                    </div>
+                    <p className="text-slate-300 text-xs leading-relaxed">
+                      Generates cleaned, auto-repaired integration contract JSON/YAML payloads alongside executable SQL DDL, PySpark, Python, and TypeScript payload transformation code for enterprise ESB/middleware integration (MuleSoft, Boomi, Apache Camel, or custom API gateways).
+                    </p>
+                  </div>
+
+                  {/* MODE 2 - STEP 7 */}
+                  <div className="p-4 bg-slate-950 border border-indigo-900/40 rounded-xl space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 font-bold text-white text-xs font-mono">
+                        <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded text-[10px]">STEP 7</span>
                         <span>Visual Architecture &amp; Executive BA Reports</span>
                       </div>
                       <span className="text-[10px] font-mono text-indigo-400">Architecture &amp; Docs</span>
                     </div>
                     <p className="text-slate-300 text-xs leading-relaxed">
-                      Renders an interactive topology diagram of source endpoints, enterprise middleware, and target applications. Produces comprehensive Business Analyst summary reports containing integration health metrics, entity sync tables, and regulatory compliance readiness.
+                      Renders an interactive topological architecture diagram of source endpoints, enterprise middleware, and target systems. Compiles and exports comprehensive Business Analyst (BA) reports in standalone PDF format (with automated print fallback) containing health matrices, entity sync tables, and regulatory compliance readiness.
+                    </p>
+                  </div>
+                </div>
+
+                {/* CLOSED-LOOP SYSTEM ARCHITECTURE CALLOUT */}
+                <div className="p-5 bg-gradient-to-br from-indigo-950/60 via-slate-950 to-emerald-950/40 border border-indigo-500/40 rounded-2xl space-y-4 shadow-lg">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 bg-indigo-500/20 border border-indigo-500/40 rounded-lg text-indigo-300">
+                        <RefreshCw className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-white font-mono flex items-center gap-2">
+                          <span>Closed-Loop Feedback System: Mode 2 ⇄ Mode 1 ⇄ Catalog</span>
+                          <span className="px-2 py-0.5 text-[9px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 rounded">Unified Cycle</span>
+                        </h4>
+                        <p className="text-[11px] text-slate-400 font-sans">
+                          Mode 1 and Mode 2 are not isolated silos — they form a continuous, bi-directional enterprise feedback loop.
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-xs font-mono text-indigo-300 bg-indigo-900/40 px-2.5 py-1 rounded-md border border-indigo-700/50">
+                      Cold-Start Accelerated
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
+                    {/* Loop Pillar 1 */}
+                    <div className="p-3 bg-slate-900/90 border border-slate-800 rounded-xl space-y-2">
+                      <div className="flex items-center gap-2 text-xs font-bold text-indigo-300 font-mono">
+                        <span className="w-5 h-5 rounded-full bg-indigo-500/20 text-indigo-300 flex items-center justify-center text-[10px]">1</span>
+                        <span>Reverse-Engineered Bridge</span>
+                      </div>
+                      <p className="text-[11px] text-slate-300 leading-relaxed">
+                        Deconstructed entity mappings from raw contracts or Talend tMap XML flow directly into Mode 1 Trust Review via <strong>&quot;Transfer to Mode 1&quot;</strong>. Analysts bypass weeks of manual field re-entry.
+                      </p>
+                    </div>
+
+                    {/* Loop Pillar 2 */}
+                    <div className="p-3 bg-slate-900/90 border border-slate-800 rounded-xl space-y-2">
+                      <div className="flex items-center gap-2 text-xs font-bold text-emerald-300 font-mono">
+                        <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center text-[10px]">2</span>
+                        <span>Stewardship Catalog Growth</span>
+                      </div>
+                      <p className="text-[11px] text-slate-300 leading-relaxed">
+                        Synthesized canonical models from Mode 2 are promoted directly into the organization's <strong>Canonical Catalog</strong> via <strong>&quot;Promote to Catalog&quot;</strong>, enriching the corporate semantic dictionary for all future jobs.
+                      </p>
+                    </div>
+
+                    {/* Loop Pillar 3 */}
+                    <div className="p-3 bg-slate-900/90 border border-slate-800 rounded-xl space-y-2">
+                      <div className="flex items-center gap-2 text-xs font-bold text-cyan-300 font-mono">
+                        <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-300 flex items-center justify-center text-[10px]">3</span>
+                        <span>Persistent Assertion Invariants</span>
+                      </div>
+                      <p className="text-[11px] text-slate-300 leading-relaxed">
+                        Schema constraints and foreign-key invariants extracted in Mode 2 persist in workspace storage and immediately feed Semantra's <strong>Assertions &amp; Test Suite Engine</strong> for continuous verification.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="p-3 bg-indigo-950/40 border border-indigo-800/40 rounded-xl flex items-center gap-3 text-xs text-indigo-200">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <p className="leading-relaxed">
+                      <strong>The Result:</strong> Enterprise teams can ingest a legacy 5-year-old Talend ETL job or MuleSoft API contract, automatically extract its data entities, bridge them to Mode 1, verify them against Golden Master benchmarks, and generate modern, production-ready dbt / PySpark code in minutes.
                     </p>
                   </div>
                 </div>
@@ -1125,11 +1223,122 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                   </p>
                 </div>
 
+                {/* Quick Reference Summary Matrix */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-bold text-slate-100 uppercase tracking-wider font-mono flex items-center gap-2">
+                      <Terminal className="w-4 h-4 text-cyan-400" />
+                      Executive AI Matrix: Where &amp; How AI Operates in Semantra
+                    </h4>
+                    <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded">
+                      Zero Autonomous Decisions
+                    </span>
+                  </div>
+                  <div className="overflow-x-auto border border-slate-800 rounded-xl bg-slate-950/80">
+                    <table className="w-full text-left border-collapse text-[11px] font-sans">
+                      <thead>
+                        <tr className="bg-slate-900/90 text-slate-400 font-mono text-[10px] uppercase border-b border-slate-800">
+                          <th className="p-2.5">Workflow Surface / Feature</th>
+                          <th className="p-2.5">UI Location</th>
+                          <th className="p-2.5">Trigger Modality</th>
+                          <th className="p-2.5">LLM Function &amp; Guardrail</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800/60 text-slate-300">
+                        <tr className="hover:bg-slate-900/40">
+                          <td className="p-2.5 font-semibold text-emerald-400 font-mono">1. Companion Spec Extraction</td>
+                          <td className="p-2.5 font-mono text-slate-400">Workspace &gt; Step 1 Setup</td>
+                          <td className="p-2.5"><span className="px-1.5 py-0.5 bg-emerald-500/20 text-emerald-300 rounded font-mono text-[10px]">Auto / On Upload</span></td>
+                          <td className="p-2.5 text-slate-300">Extracts field business descriptions &amp; data types from unstructured PDF/CSV/Excel docs.</td>
+                        </tr>
+                        <tr className="hover:bg-slate-900/40">
+                          <td className="p-2.5 font-semibold text-indigo-300 font-mono">2. Ambiguity Validation Gate</td>
+                          <td className="p-2.5 font-mono text-slate-400">Workspace &gt; Step 1 Setup</td>
+                          <td className="p-2.5"><span className="px-1.5 py-0.5 bg-indigo-500/20 text-indigo-300 rounded font-mono text-[10px]">Conditional Gate</span></td>
+                          <td className="p-2.5 text-slate-300">Fires only when heuristic score is ambiguous (0.30–0.75) or tie-break margin &le; 0.05. Closed candidates only.</td>
+                        </tr>
+                        <tr className="hover:bg-slate-900/40">
+                          <td className="p-2.5 font-semibold text-cyan-400 font-mono">3. Per-Row &amp; Batch LLM Refine</td>
+                          <td className="p-2.5 font-mono text-slate-400">Workspace &gt; Step 2 Review</td>
+                          <td className="p-2.5"><span className="px-1.5 py-0.5 bg-cyan-500/20 text-cyan-300 rounded font-mono text-[10px]">On-Demand Button</span></td>
+                          <td className="p-2.5 text-slate-300">Analyst provides custom domain guidance/negative prompt to refine difficult ambiguous rows.</td>
+                        </tr>
+                        <tr className="hover:bg-slate-900/40">
+                          <td className="p-2.5 font-semibold text-purple-400 font-mono">4. LLM Proposals Panel</td>
+                          <td className="p-2.5 font-mono text-slate-400">Workspace &gt; Step 2 Review &amp; Decisions</td>
+                          <td className="p-2.5"><span className="px-1.5 py-0.5 bg-purple-500/20 text-purple-300 rounded font-mono text-[10px]">On-Demand / Batch</span></td>
+                          <td className="p-2.5 text-slate-300">Generates inspectable candidate proposals with reasoning text; requires explicit human accept/reject.</td>
+                        </tr>
+                        <tr className="hover:bg-slate-900/40">
+                          <td className="p-2.5 font-semibold text-rose-400 font-mono">5. Mapping Narrative Summary</td>
+                          <td className="p-2.5 font-mono text-slate-400">Workspace &gt; Step 2 Review</td>
+                          <td className="p-2.5"><span className="px-1.5 py-0.5 bg-rose-500/20 text-rose-300 rounded font-mono text-[10px]">On-Demand Button</span></td>
+                          <td className="p-2.5 text-slate-300">Synthesizes executive health overview, signal distribution, and transformation readiness narrative.</td>
+                        </tr>
+                        <tr className="hover:bg-slate-900/40">
+                          <td className="p-2.5 font-semibold text-blue-400 font-mono">6. Code Synthesis (PySpark/dbt)</td>
+                          <td className="p-2.5 font-mono text-slate-400">Workspace &gt; Step 4 Output</td>
+                          <td className="p-2.5"><span className="px-1.5 py-0.5 bg-blue-500/20 text-blue-300 rounded font-mono text-[10px]">Governed Generation</span></td>
+                          <td className="p-2.5 text-slate-300">Synthesizes executable PySpark, SQL DDL, or dbt code with embedded casts and assertions.</td>
+                        </tr>
+                        <tr className="hover:bg-slate-900/40">
+                          <td className="p-2.5 font-semibold text-emerald-400 font-mono">7. Natural Language Code Refinement</td>
+                          <td className="p-2.5 font-mono text-slate-400">Workspace &gt; Step 4 Output</td>
+                          <td className="p-2.5"><span className="px-1.5 py-0.5 bg-emerald-500/20 text-emerald-300 rounded font-mono text-[10px]">Interactive Prompt</span></td>
+                          <td className="p-2.5 text-slate-300">Accepts plain English requests (e.g. &quot;add null-check on tax_id&quot;) &amp; renders diff with accept/discard.</td>
+                        </tr>
+                        <tr className="hover:bg-slate-900/40">
+                          <td className="p-2.5 font-semibold text-teal-400 font-mono">8. Unit Test Set &amp; Invariants</td>
+                          <td className="p-2.5 font-mono text-slate-400">Workspace &gt; Step 4 Output</td>
+                          <td className="p-2.5"><span className="px-1.5 py-0.5 bg-teal-500/20 text-teal-300 rounded font-mono text-[10px]">On-Demand</span></td>
+                          <td className="p-2.5 text-slate-300">Synthesizes Great Expectations &amp; PyTest assertions to verify transformation logic repeatability.</td>
+                        </tr>
+                        <tr className="hover:bg-slate-900/40">
+                          <td className="p-2.5 font-semibold text-indigo-400 font-mono">9. Workspace Copilot</td>
+                          <td className="p-2.5 font-mono text-slate-400">Sidebar &amp; Header Assistant</td>
+                          <td className="p-2.5"><span className="px-1.5 py-0.5 bg-indigo-500/20 text-indigo-300 rounded font-mono text-[10px]">Chat / Q&amp;A</span></td>
+                          <td className="p-2.5 text-slate-300">Context-aware assistant for workspace blocker troubleshooting, confidence analytics, and audit guidance.</td>
+                        </tr>
+                        <tr className="hover:bg-slate-900/40">
+                          <td className="p-2.5 font-semibold text-amber-400 font-mono">10. Benchmark Explanation Engine</td>
+                          <td className="p-2.5 font-mono text-slate-400">Navigation &gt; Benchmarks</td>
+                          <td className="p-2.5"><span className="px-1.5 py-0.5 bg-amber-500/20 text-amber-300 rounded font-mono text-[10px]">Run Analysis</span></td>
+                          <td className="p-2.5 text-slate-300">Explains benchmark metrics, scoring profile regressions, and human correction learning curve impact.</td>
+                        </tr>
+                        <tr className="hover:bg-slate-900/40">
+                          <td className="p-2.5 font-semibold text-emerald-400 font-mono">11. Governance Gap Suggestions</td>
+                          <td className="p-2.5 font-mono text-slate-400">Governance &gt; Canonical Console</td>
+                          <td className="p-2.5"><span className="px-1.5 py-0.5 bg-emerald-500/20 text-emerald-300 rounded font-mono text-[10px]">Stewardship Review</span></td>
+                          <td className="p-2.5 text-slate-300">Suggests new canonical concepts or synonyms from recurring unmapped field patterns across jobs.</td>
+                        </tr>
+                        <tr className="hover:bg-slate-900/40">
+                          <td className="p-2.5 font-semibold text-cyan-400 font-mono">12. Catalog Reuse Fit Reasoner</td>
+                          <td className="p-2.5 font-mono text-slate-400">Navigation &gt; Catalog</td>
+                          <td className="p-2.5"><span className="px-1.5 py-0.5 bg-cyan-500/20 text-cyan-300 rounded font-mono text-[10px]">Comparison</span></td>
+                          <td className="p-2.5 text-slate-300">Evaluates compatibility and field overlap between saved catalog versions and active datasets.</td>
+                        </tr>
+                        <tr className="hover:bg-slate-900/40">
+                          <td className="p-2.5 font-semibold text-indigo-300 font-mono">13. Contract Reverse Engineering (Mode 2)</td>
+                          <td className="p-2.5 font-mono text-slate-400">Workspace &gt; Mode 2 Selector</td>
+                          <td className="p-2.5"><span className="px-1.5 py-0.5 bg-indigo-500/20 text-indigo-300 rounded font-mono text-[10px]">Multi-Step Engine</span></td>
+                          <td className="p-2.5 text-slate-300">Extracts FK graphs, detects schema constraints (PK/NOT_NULL/CHECK), and generates BA architecture reports.</td>
+                        </tr>
+                        <tr className="hover:bg-slate-900/40">
+                          <td className="p-2.5 font-semibold text-emerald-300 font-mono">14. PII Masking &amp; Circuit Breaker</td>
+                          <td className="p-2.5 font-mono text-slate-400">Pre-Flight &amp; Network Gateways</td>
+                          <td className="p-2.5"><span className="px-1.5 py-0.5 bg-emerald-500/20 text-emerald-300 rounded font-mono text-[10px]">Automated Shield</span></td>
+                          <td className="p-2.5 text-slate-300">Pre-flight regex tokenization (emails/IBAN/PIB/JMBG) + 3-state circuit breaker with fallback to heuristics.</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
                 {/* 4 Primary Bounded AI Use Cases Grid */}
                 <div className="space-y-3">
                   <h4 className="font-bold text-slate-200 text-xs uppercase font-mono tracking-wider text-emerald-400 flex items-center gap-2">
                     <Zap className="w-4 h-4 text-emerald-400" />
-                    Complete Inventory of Active Bounded AI Surfaces & Integration Points (13 Surfaces)
+                    Complete Inventory of Active Bounded AI Surfaces & Integration Points (14 Active Surfaces)
                   </h4>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
@@ -2414,26 +2623,61 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                     </span>
                   </div>
                   <p className="text-slate-400 text-xs mt-1">
-                    Dedicated interactive simulation environments designed to validate, harden, and demonstrate four critical enterprise data integration patterns.
+                    Dedicated interactive simulation environments designed to validate, harden, and demonstrate five critical enterprise data integration patterns.
                   </p>
                 </div>
 
-                {/* Executive Purpose */}
-                <div className="p-4 bg-indigo-950/30 border border-indigo-800/50 rounded-xl space-y-2">
-                  <h4 className="text-sm font-bold text-indigo-200 flex items-center gap-2 font-mono">
-                    <Info className="w-4 h-4 text-indigo-400" />
-                    Purpose &amp; Role of Architecture Studios in Semantra
-                  </h4>
+                {/* Executive Purpose & Architectural Boundary */}
+                <div className="p-4 bg-indigo-950/30 border border-indigo-800/50 rounded-xl space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-bold text-indigo-200 flex items-center gap-2 font-mono">
+                      <Info className="w-4 h-4 text-indigo-400" />
+                      Architectural Demarcation: Control Plane &amp; Compiler vs. Execution Plane
+                    </h4>
+                    <span className="px-2 py-0.5 text-[10px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 rounded font-semibold">
+                      Zero Vendor Lock-In
+                    </span>
+                  </div>
+                  
                   <p className="text-slate-300 text-xs leading-relaxed">
-                    While the standard <strong>Core Workbench</strong> (WF-01–06) focuses on automated column mapping, signal scoring, and transformation code generation, production deployments face 4 critical high-risk challenges (P0–P2). <strong>Architecture Studios</strong> serve as specialized interactive laboratories where engineering teams can simulate edge cases, test invariant validation, and generate production-grade <strong>Pydantic V2</strong>, <strong>dbt</strong>, <strong>PySpark</strong>, and <strong>SQL</strong> code before going live.
+                    <strong>Crucial Enterprise Principle:</strong> Semantra is a <strong>Semantic Control Plane and Code-Generation Compiler</strong> — it is <strong>NOT an Execution Engine / Data Plane</strong>. Semantra does not replace or compete with your existing compute engines (<strong>Databricks</strong>, <strong>Snowflake</strong>, <strong>Apache Kafka</strong>, <strong>dbt</strong>, or <strong>Spark</strong>). Instead, Semantra serves as the intelligent design workbench that bridges business semantics and generates tested, production-grade scripts that run natively on the infrastructure you already own.
                   </p>
+
+                  {/* Control Plane vs Execution Plane Comparison Table */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 text-[11px] font-mono">
+                    <div className="p-3 bg-slate-900/90 border border-indigo-500/30 rounded-lg space-y-1.5">
+                      <div className="text-indigo-300 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                        <Layers className="w-3.5 h-3.5 text-indigo-400" />
+                        <span>Semantra (Design &amp; Control Plane)</span>
+                      </div>
+                      <ul className="text-slate-300 space-y-1 font-sans text-[11px]">
+                        <li>• <strong>Where decisions are made:</strong> Canonical glossary, schema mapping, signal scoring, and data stewardship.</li>
+                        <li>• <strong>Edge-case simulation:</strong> Interactive sandbox testing on sample payloads (Schema Drift, Coercion, Protobuf).</li>
+                        <li>• <strong>Multi-target compiler:</strong> Automatically compiles mapping rules into <code>dbt SQL</code>, <code>PySpark</code>, <code>Pydantic V2</code>, and <code>.proto</code> contracts.</li>
+                        <li>• <strong>Zero data storage:</strong> Customer big data never leaves your secure VPC; Semantra operates purely on schemas and sample invariants.</li>
+                      </ul>
+                    </div>
+
+                    <div className="p-3 bg-slate-900/90 border border-slate-700 rounded-lg space-y-1.5">
+                      <div className="text-emerald-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                        <Server className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>Execution Stack (Databricks, Snowflake, Kafka)</span>
+                      </div>
+                      <ul className="text-slate-300 space-y-1 font-sans text-[11px]">
+                        <li>• <strong>Where compute is spent:</strong> Databricks and Spark clusters execute heavy transformations over petabytes of data.</li>
+                        <li>• <strong>Analytics warehousing:</strong> Snowflake, BigQuery, and Redshift run the compiled <code>dbt</code> models.</li>
+                        <li>• <strong>Distributed streaming:</strong> Apache Kafka &amp; Debezium CDC handle message bus relay with At-Least-Once delivery.</li>
+                        <li>• <strong>High-throughput runtime:</strong> API Gateways (Envoy, FastAPI) execute compiled Protobuf &amp; FieldMask adapters at 0.3ms latency.</li>
+                      </ul>
+                    </div>
+                  </div>
                 </div>
 
-                {/* 4 Studios Breakdown Grid */}
+                {/* 5 Studios Breakdown Grid */}
                 <div className="space-y-3">
                   <h4 className="text-xs font-bold text-slate-100 uppercase tracking-wider font-mono flex items-center gap-2">
                     <Layers className="w-4 h-4 text-indigo-400" />
-                    Overview of the 4 Architecture Studios &amp; Problem-Solution Matrix
+                    Overview of the 5 Architecture Studios &amp; Problem-Solution Matrix
                   </h4>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2508,6 +2752,24 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                         <div><strong className="text-purple-300">Guarantee:</strong> <em>At-Least-Once</em> delivery with zero event loss across distributed systems.</div>
                       </div>
                     </div>
+
+                    {/* Studio 5 */}
+                    <div className="p-4 bg-slate-950 border border-slate-800 hover:border-indigo-500/40 rounded-xl space-y-2.5 transition-colors md:col-span-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-indigo-300 text-xs font-mono flex items-center gap-2">
+                          <ArrowLeftRight className="w-4 h-4 text-indigo-400" />
+                          5. Multi-Protocol Translation Studio
+                        </span>
+                        <span className="px-1.5 py-0.5 text-[9px] font-mono bg-cyan-500/20 text-cyan-300 rounded border border-cyan-500/30 font-bold">P2 Performance</span>
+                      </div>
+                      <p className="text-slate-300 text-[11px] leading-relaxed">
+                        <strong>Problem:</strong> Client applications and web dashboards prefer GraphQL for query flexibility (fetching only needed fields), whereas internal microservices and high-throughput systems communicate via binary gRPC/Protobuf. Hand-crafted translation layers create duplication, N+1 query storms, and database over-fetching.
+                      </p>
+                      <div className="p-2.5 bg-slate-900/90 rounded-lg border border-slate-800 text-[10px] space-y-1 font-mono text-slate-400">
+                        <div><strong className="text-emerald-400">Solution:</strong> GraphQL AST parser &rarr; Semantra Canonical Glossary Resolver &rarr; <code className="text-slate-200">google.protobuf.FieldMask</code> dynamic compilation &amp; binary Protobuf dispatch.</div>
+                        <div><strong className="text-cyan-400">Guarantee:</strong> 10&times; faster gateway throughput, ~80% network payload reduction, and zero database over-fetching.</div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -2527,6 +2789,10 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                     </li>
                     <li className="p-2 bg-slate-900 rounded border border-slate-800 flex items-center gap-2">
                       <Check className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Protobuf .proto &amp; GraphQL Schema SDL</span>
+                    </li>
+                    <li className="p-2 bg-slate-900 rounded border border-slate-800 flex items-center gap-2">
+                      <Check className="w-3.5 h-3.5 text-emerald-400" />
                       <span>dbt Schema Invariants &amp; SQL Models</span>
                     </li>
                     <li className="p-2 bg-slate-900 rounded border border-slate-800 flex items-center gap-2">
@@ -2536,6 +2802,10 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                     <li className="p-2 bg-slate-900 rounded border border-slate-800 flex items-center gap-2">
                       <Check className="w-3.5 h-3.5 text-emerald-400" />
                       <span>PostgreSQL &amp; SQLite ACID Outbox DDL</span>
+                    </li>
+                    <li className="p-2 bg-slate-900 rounded border border-slate-800 flex items-center gap-2">
+                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>FastAPI BFF &amp; FieldMask Gateway Transcoder</span>
                     </li>
                   </ul>
                 </div>
@@ -2548,6 +2818,161 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                   </h4>
                   <p className="text-xs text-slate-400 leading-relaxed font-sans">
                     In the left navigation sidebar, expand the <strong>Architecture Studios (P0–P2)</strong> accordion menu. Click on any studio to launch its live interactive simulation environment.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* SECTION 12: DATA CONTRACTS & GITOPS CI/CD */}
+            {activeSection === 'data_contracts_gitops' && (
+              <div className="space-y-6">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 text-xs font-mono bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded font-semibold">
+                      Enterprise Data Mesh &amp; GitOps Architecture
+                    </span>
+                    <span className="px-2 py-0.5 text-xs font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded font-semibold">
+                      OpenDataContract v2.2.0 Spec
+                    </span>
+                  </div>
+                  <h3 className="text-lg font-bold text-white mt-1 font-sans">
+                    12. Data Contracts (ODC) &amp; CI/CD GitOps Integration
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                    How Semantra bridges the gap between semantic design and enterprise deployment pipelines without executing transformation workloads or mutating cloud state directly.
+                  </p>
+                </div>
+
+                {/* Core Architectural Distinction */}
+                <div className="p-4 bg-gradient-to-r from-slate-950 via-indigo-950/40 to-slate-950 border border-indigo-900/60 rounded-xl space-y-3">
+                  <h4 className="text-xs font-bold text-slate-100 uppercase tracking-wider font-mono flex items-center gap-2 text-indigo-300">
+                    <Shield className="w-4 h-4 text-emerald-400" />
+                    The Philosophy: Semantic Control Plane &amp; Contract Hub
+                  </h4>
+                  <p className="text-slate-300 text-xs leading-relaxed font-sans">
+                    In modern Data Mesh ecosystems, <strong>Data Contracts</strong> establish legally binding, machine-readable specifications between domain data producers (e.g., Billing, CRM) and downstream data consumers (e.g., Analytics, Risk AI).
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[11px] font-sans">
+                    <div className="p-3 bg-slate-900/90 rounded-lg border border-slate-800 space-y-1">
+                      <strong className="text-emerald-400 font-mono block">What Semantra Does (Design &amp; Governance):</strong>
+                      <span className="text-slate-300">
+                        Acts as the central semantic compiler. Designs field mappings, defines SLA freshness guarantees, enforces evolution policies (strict/additive), and compiles verified <code>datacontract.yaml</code> and <code>dbt</code> models.
+                      </span>
+                    </div>
+                    <div className="p-3 bg-slate-900/90 rounded-lg border border-slate-800 space-y-1">
+                      <strong className="text-indigo-300 font-mono block">What Customer Infrastructure Does (Execution Plane):</strong>
+                      <span className="text-slate-300">
+                        Customer GitHub/GitLab runners execute CI validation via <code>datacontract-cli</code>, and cloud warehouses (Databricks, Snowflake) run the compiled dbt models over production databases.
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Feature 1: OpenDataContract Spec */}
+                <div className="space-y-3">
+                  <h4 className="text-xs font-bold text-slate-100 uppercase tracking-wider font-mono flex items-center gap-2">
+                    <FileCheck2 className="w-4 h-4 text-indigo-400" />
+                    1. OpenDataContract Specification (ODC v2.2.0)
+                  </h4>
+                  <p className="text-xs text-slate-400 leading-relaxed font-sans">
+                    Available in <strong>Workspace Step 4 (Durable Output Code Generation)</strong> under the <strong>Data Contract (ODC)</strong> tab:
+                  </p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                    <div className="p-3.5 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
+                      <div className="flex items-center gap-2 font-mono text-emerald-400 font-bold">
+                        <Clock className="w-4 h-4" />
+                        <span>SLA Freshness Policy</span>
+                      </div>
+                      <p className="text-slate-300 text-[11px] leading-relaxed">
+                        Configurable latency metrics ranging from <em>15m Streaming/Microbatch</em> to <em>Daily batch by 06:00 UTC</em>. Injected directly into the contract SLA block.
+                      </p>
+                    </div>
+
+                    <div className="p-3.5 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
+                      <div className="flex items-center gap-2 font-mono text-indigo-300 font-bold">
+                        <Sliders className="w-4 h-4" />
+                        <span>Schema Evolution Policy</span>
+                      </div>
+                      <p className="text-slate-300 text-[11px] leading-relaxed">
+                        Enforces breaking change prevention: <strong>strict</strong> (zero breaking changes allowed, DLQ quarantine for drift), <strong>additive_only</strong>, or <strong>compatible</strong>.
+                      </p>
+                    </div>
+
+                    <div className="p-3.5 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
+                      <div className="flex items-center gap-2 font-mono text-cyan-400 font-bold">
+                        <ShieldCheck className="w-4 h-4" />
+                        <span>Quality Invariants</span>
+                      </div>
+                      <p className="text-slate-300 text-[11px] leading-relaxed">
+                        Binds Semantra's Great Expectations and dbt test rules (e.g. <code>net_amount &gt;= 0</code>, <code>id unique</code>) into machine-verifiable assertions.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Feature 2: GitOps CI/CD Automation */}
+                <div className="space-y-3">
+                  <h4 className="text-xs font-bold text-slate-100 uppercase tracking-wider font-mono flex items-center gap-2">
+                    <GitPullRequest className="w-4 h-4 text-emerald-400" />
+                    2. GitOps &amp; CI/CD Pipeline Automation (One-Click Pull Request)
+                  </h4>
+                  <p className="text-xs text-slate-400 leading-relaxed font-sans">
+                    Rather than requiring data engineers to manually copy code or download ZIP files, Semantra integrates directly into the GitOps delivery lifecycle via the <strong>GitOps / CI/CD (PR)</strong> action:
+                  </p>
+
+                  <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-3">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-mono text-slate-200 font-bold flex items-center gap-2">
+                        <FolderGit2 className="w-4 h-4 text-indigo-400" />
+                        Automated GitHub Actions CI Workflow: <code>.github/workflows/data_contract_ci.yml</code>
+                      </span>
+                      <span className="px-2 py-0.5 text-[10px] font-mono bg-emerald-500/20 text-emerald-300 rounded border border-emerald-500/30">
+                        Zero-Execution Safe
+                      </span>
+                    </div>
+
+                    <pre className="p-3 bg-slate-900 border border-slate-800 rounded-lg text-[11px] font-mono text-emerald-400 overflow-x-auto whitespace-pre">
+{`jobs:
+  verify-data-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 1. Validate OpenDataContract v2.2.0 Syntax & Linter
+        run: datacontract lint contracts/datacontract.yaml
+      - name: 2. Test Contract against Target Schema (Breaking Change Gate)
+        run: datacontract test --schema contracts/datacontract.yaml
+      - name: 3. Compile dbt Models (Databricks / Snowflake)
+        run: dbt compile --project-dir dbt_project/
+      - name: 4. Execute Semantra Invariant Assertion Suite
+        run: pytest tests/test_transformation_invariants.py`}
+                    </pre>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-[11px] text-slate-300 font-sans">
+                      <div className="p-2.5 bg-slate-900/80 rounded border border-slate-800">
+                        <strong className="text-white block font-mono">1. Multi-Provider:</strong>
+                        <span>Supports GitHub, GitLab, and Azure DevOps repository targets.</span>
+                      </div>
+                      <div className="p-2.5 bg-slate-900/80 rounded border border-slate-800">
+                        <strong className="text-white block font-mono">2. Automated PR:</strong>
+                        <span>Bundles YAML contracts, dbt models, and schema tests into a clean branch PR.</span>
+                      </div>
+                      <div className="p-2.5 bg-slate-900/80 rounded border border-slate-800">
+                        <strong className="text-white block font-mono">3. Pre-flight Verification:</strong>
+                        <span>Demonstrates 3/3 passing CI checks (linter, compiler, and steward signoff).</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Where to Access */}
+                <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
+                  <h4 className="font-bold text-slate-200 text-xs font-sans flex items-center gap-2">
+                    <Sliders className="w-4 h-4 text-indigo-400" />
+                    How to Access in Semantra
+                  </h4>
+                  <p className="text-xs text-slate-400 leading-relaxed font-sans">
+                    Navigate to <strong>Workspace &rarr; Step 4 (Code Output)</strong>. Click on the <strong>Data Contract (ODC)</strong> tab to view and configure SLA/Evolution policies, or click <strong>GitOps / CI/CD (PR)</strong> in the top-right toolbar to open the pipeline generator and create an automated Pull Request.
                   </p>
                 </div>
               </div>

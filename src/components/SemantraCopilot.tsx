@@ -167,6 +167,13 @@ How can I help you today? You can type any question or pick a quick prompt below
       ];
     }
 
+    if (activeTab === 'protocol_translation') {
+      return [
+        { label: '🌐 GraphQL to gRPC Translation', query: 'How does Semantra translate GraphQL AST queries into binary gRPC Protocol Buffers?' },
+        { label: '🎭 google.protobuf.FieldMask', query: 'How does FieldMask optimization eliminate database over-fetching and improve throughput?' }
+      ];
+    }
+
     return [
       { label: '🚀 First Steps & Guide', query: 'What should be my first step in the app and how do I start?' },
       { label: '🤖 Workspace Status', query: 'What is the current workspace status and recommended next steps?' },
@@ -239,6 +246,12 @@ How can I help you today? You can type any question or pick a quick prompt below
       risk: [
         'risk', 'warn', 'alert', 'low', 'danger', 'issue', 'error',
         'rizik', 'upozor', 'alert', 'warn', 'nisk', 'opasn', 'problem'
+      ],
+      protocol_translation: [
+        'graphql', 'grpc', 'protobuf', 'fieldmask', 'ast', 'translation', 'multiprotocol', 'protocol', 'rest to grpc', 'proto'
+      ],
+      execution_architecture: [
+        'databricks', 'snowflake', 'execution', 'runtime', 'spark', 'izvrs', 'izvrš', 'control plane', 'data plane', 'engine', 'where does it run', 'lock in', 'lock-in', 'compiler'
       ]
     };
 
@@ -492,6 +505,34 @@ Semantra calculates candidate match rankings across 10 deterministic & AI signal
 - **Remediation:** Navigate to **"Trust Review"** to supply explicit transformation logic or trigger AI spec enrichment.
 
 ❓ *Shall we review the specific fields causing low confidence in your active dataset?*`;
+      }
+
+      if (intentId === 'protocol_translation') {
+        return `🌐 **Multi-Protocol API Translation Engine (GraphQL ⇄ gRPC / Protobuf):**
+
+Semantra bridges frontend query flexibility with high-performance internal microservices:
+1. 🔍 **GraphQL AST Parsing:** The gateway parses the incoming query's Abstract Syntax Tree (AST) to identify exactly which fields the client requested.
+2. 📘 **Canonical Resolution:** Maps GraphQL property names (e.g. \`taxNumber\`) to registered Canonical Concepts (\`canonical_tax_id\`).
+3. 🎭 **FieldMask Optimization:** Generates standard \`google.protobuf.FieldMask(paths=[...])\`. The backend microservice executes \`SELECT <requested_paths>\`, eliminating up to 80% database over-fetching.
+4. ⚡ **Sub-Millisecond Wire Acceleration:** The gateway dispatches binary Protocol Buffers over multiplexed HTTP/2 streams, reducing network serialization overhead by up to 10× compared to verbose JSON.
+
+💡 *Use the **Interactive Field Selector** in the Multi-Protocol Studio to toggle fields and observe dynamic FieldMask compilation and Protobuf payload assembly.*`;
+      }
+
+      if (intentId === 'execution_architecture') {
+        return `🏗️ **Architectural Boundary: Control Plane vs. Execution Plane:**
+
+**Semantra does NOT replace Databricks, Snowflake, Apache Kafka, or Apache Spark.**
+
+- 🧠 **Semantra is a Semantic Control Plane & Code-Generation Compiler:**
+  - Where data architects and stewards define canonical business concepts and mapping rules.
+  - Interactive sandboxes (Architecture Studios) allow simulating and hardening edge cases (Schema Drift, Coercion, Protobuf) on small, safe sample payloads.
+  - Compiles semantic models into native, production-grade **dbt SQL**, **PySpark**, **Pydantic V2**, and **Protobuf** code.
+
+- ⚙️ **Databricks, Snowflake & Kafka are the Execution Plane:**
+  - That is where petabytes of data, cluster compute, and high-frequency streaming events actually run.
+  - Customers export Semantra's compiled scripts directly into their CI/CD, Airflow, and Databricks/Snowflake jobs with **Zero Vendor Lock-In**.
+  - **Zero Data Footprint:** Sensitive enterprise data never leaves your secure VPC; Semantra operates strictly on schemas and metadata.`;
       }
     }
 

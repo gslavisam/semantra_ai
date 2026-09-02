@@ -10,6 +10,7 @@ import {
   FileCheck,
   Users,
   Radio,
+  ArrowLeftRight,
   ChevronDown,
   ChevronRight
 } from 'lucide-react';
@@ -50,7 +51,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'schema_drift', label: 'Schema Drift Studio', icon: GitBranch, description: 'Dynamic JSONB & DLQ' },
     { id: 'type_coercion', label: 'Type Coercion Studio', icon: FileCheck, description: 'Strict ISO & Numeric Casting' },
     { id: 'entity_resolution', label: 'Entity Resolution', icon: Users, description: 'Golden Records & Fuzzy Dedup' },
-    { id: 'transactional_outbox', label: 'Transactional Outbox', icon: Radio, description: 'CDC Debezium & Kafka Relay' }
+    { id: 'transactional_outbox', label: 'Transactional Outbox', icon: Radio, description: 'CDC Debezium & Kafka Relay' },
+    { id: 'protocol_translation', label: 'Multi-Protocol Studio', icon: ArrowLeftRight, description: 'GraphQL AST ⇄ gRPC FieldMask' }
   ];
 
   const isAnyStudioActive = enterpriseLabItems.some(item => item.id === activeTab);

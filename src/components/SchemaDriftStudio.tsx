@@ -276,12 +276,15 @@ if __name__ == "__main__":
       <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-slate-800 rounded-2xl p-6 text-white shadow-xl">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1.5">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
                 P0 Enterprise Resilience
               </span>
               <span className="px-2 py-0.5 rounded-md text-[11px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                 Active Registry: {schemaVersion}
+              </span>
+              <span className="px-2 py-0.5 rounded-md text-[11px] font-mono bg-slate-800 text-slate-300 border border-slate-700 font-bold">
+                Execution Target: Databricks / Snowflake / Pydantic Ingestion
               </span>
             </div>
             <h2 className="text-xl font-bold font-sans tracking-tight flex items-center gap-2">
@@ -289,7 +292,7 @@ if __name__ == "__main__":
               Automated Schema Drift Detection & Evolution Engine
             </h2>
             <p className="text-sm text-slate-300 max-w-3xl leading-relaxed">
-              Prevents unexpected B2B pipeline crashes when upstream ERPs alter payload contracts. Additive fields are dynamically packed into JSONB buffers, while breaking deletions route to Quarantine DLQ.
+              <strong>Control Plane Sandbox:</strong> Prevents pipeline crashes when upstream ERPs alter payload contracts. Semantra tests drift scenarios on sample payloads and generates Pydantic V2 &amp; SQL DDL adapters that execute natively inside your existing Databricks, Snowflake, or API ingestion pipelines.
             </p>
           </div>
           <button

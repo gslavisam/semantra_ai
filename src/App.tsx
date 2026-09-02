@@ -15,6 +15,7 @@ import { SchemaDriftStudio } from './components/SchemaDriftStudio';
 import { JsonSchemaCoercionStudio } from './components/JsonSchemaCoercionStudio';
 import { EntityResolutionStudio } from './components/EntityResolutionStudio';
 import { TransactionalOutboxStudio } from './components/TransactionalOutboxStudio';
+import { MultiProtocolTranslationStudio } from './components/MultiProtocolTranslationStudio';
 
 import { 
   MappingRow, 
@@ -666,6 +667,31 @@ export default function App() {
     setWorkspaceStep('review');
   };
 
+  // Import reverse-engineered contract mappings from Mode 2 into Mode 1 Mapping Pipeline
+  const handleImportContractMappingsToMode1 = (importedRows: MappingRow[], _sourceSys: string, _targetSys: string) => {
+    setMappings(importedRows);
+    setProposals(generateProposalsFromMappings(importedRows));
+    try {
+      localStorage.setItem(LOCAL_STORAGE_KEY_MAPPINGS, JSON.stringify(importedRows));
+    } catch {}
+    setWorkspaceMode('standard');
+    setWorkspaceStep('review');
+  };
+
+  // Promote a proposed canonical model from Mode 2 directly to Canonical Catalog
+  const handlePromoteCanonicalConcept = (concept: CanonicalConcept) => {
+    setCanonicalConcepts(prev => {
+      const exists = prev.some(c => c.concept_id === concept.concept_id);
+      const updated = exists 
+        ? prev.map(c => c.concept_id === concept.concept_id ? concept : c)
+        : [concept, ...prev];
+      try {
+        localStorage.setItem('semantra_canonical_concepts_v2', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+  };
+
   // Target dropdown list selector matching selectedPreset or uploaded target schema
   const getActiveTargetFields = () => {
     if (parsedTargetSchema && parsedTargetSchema.fields.length > 0) {
@@ -726,7 +752,11 @@ export default function App() {
 
             {/* Render selected workspace mode view */}
             {workspaceMode === 'reverse_engineering' ? (
-              <ContractReverseEngineeringView />
+              <ContractReverseEngineeringView 
+                onImportToWorkspace={handleImportContractMappingsToMode1}
+                onPromoteCanonicalConcept={handlePromoteCanonicalConcept}
+                promotedConceptIds={canonicalConcepts.map(c => c.concept_id)}
+              />
             ) : (
               <>
                 {/* Steps Workflow Header */}
@@ -940,6 +970,9 @@ export default function App() {
 
       case 'transactional_outbox':
         return <TransactionalOutboxStudio />;
+
+      case 'protocol_translation':
+        return <MultiProtocolTranslationStudio />;
 
       default:
         return null;
