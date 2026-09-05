@@ -341,7 +341,7 @@ Perform deep semantic extraction. Identify domain concepts (e.g. SAP KUNNR = Cus
 Semantic Categories MUST be one of: 'datetime', 'monetary', 'classification', 'customer', 'identifier', 'quantity', 'status', 'text', 'other'.`;
 
         const response = await ai.models.generateContent({
-          model: "gemini-3.7-flash",
+          model: "gemini-3.8-flash",
           contents: prompt,
           config: {
             systemInstruction: "You are an enterprise data integration expert analyzing metadata specifications, SAP data dictionaries, and companion JSON/CSV/DDL schema files.",
@@ -462,7 +462,7 @@ For each source field:
 5. Provide a clear, professional explanation referencing companion spec metadata where applicable.`;
 
         const response = await ai.models.generateContent({
-          model: "gemini-3.7-flash",
+          model: "gemini-3.8-flash",
           contents: prompt,
           config: {
             systemInstruction: "You are Semantra's AI workbench assistant. Deliver high quality, explainable semantic mappings with active companion specification analysis.",
@@ -507,6 +507,453 @@ For each source field:
     } catch (err: any) {
       console.error("Error enhancing mappings with AI:", err);
       res.status(500).json({ error: err.message || "AI mapping enhancement failed" });
+    }
+  });
+
+  // AI Metadata Auto-Enrichment API (Canonical & Knowledge) with PII Masking & Fallback
+  app.post("/api/ai/enrich-metadata", async (req, res) => {
+    try {
+      const { type, items, catalogContext } = req.body;
+
+      if (!type || !Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ error: "Invalid request. 'type' and non-empty 'items' array required." });
+      }
+
+      // 1. Sanitize incoming payload
+      const piiCheck = maskServerPII({ items, catalogContext });
+      const safeItems = piiCheck.sanitized.items;
+
+      // 2. Deterministic Rule-Based Fallback Engine
+      const fallbackEnricher = () => {
+        const enrichedItems = safeItems.map((item: any, idx: number) => {
+          const conceptId = String(item.concept_id || item.id || `item_${idx + 1}`).toLowerCase();
+          const displayName = item.display_name || item.canonical_name || item.name || conceptId;
+          const entity = item.entity || (conceptId.includes('.') ? conceptId.split('.')[0] : '');
+          const attribute = item.attribute || (conceptId.includes('.') ? conceptId.split('.').slice(1).join('_') : conceptId);
+          const rawTokens = `${conceptId} ${displayName} ${entity} ${attribute}`.toLowerCase();
+
+          const suggestedFields: Record<string, { value: any; reason: string; confidence: number }> = {};
+
+          if (type === 'canonical') {
+            // Description inference
+            if (!item.description || item.description.trim() === '') {
+              let inferredDesc = `Standard enterprise semantic definition for ${displayName || attribute}.`;
+              if (rawTokens.includes('cost_center') || rawTokens.includes('kostl')) {
+                inferredDesc = 'Operational cost center code representing an organizational unit responsible for cost tracking and budget control.';
+              } else if (rawTokens.includes('tax') || rawTokens.includes('vat') || rawTokens.includes('pib')) {
+                inferredDesc = 'Official national tax registration number or VAT identification code issued by government tax authorities.';
+              } else if (rawTokens.includes('customer') || rawTokens.includes('kunnr')) {
+                inferredDesc = 'Unique account identifier for commercial and institutional customers across enterprise systems.';
+              } else if (rawTokens.includes('vendor') || rawTokens.includes('lifnr') || rawTokens.includes('supplier')) {
+                inferredDesc = 'Master identification code for external vendors, contractors, and suppliers.';
+              } else if (rawTokens.includes('salary') || rawTokens.includes('plata') || rawTokens.includes('wage')) {
+                inferredDesc = 'Employee compensation amount including base salary, allowances, or hourly wage rates.';
+              } else if (rawTokens.includes('iban') || rawTokens.includes('bank')) {
+                inferredDesc = 'International Bank Account Number (IBAN) for SEPA and electronic funds routing.';
+              } else if (rawTokens.includes('email')) {
+                inferredDesc = 'Primary electronic mail address used for identity verification and business communication.';
+              }
+              suggestedFields.description = {
+                value: inferredDesc,
+                reason: 'Inferred from business domain taxonomy and token heuristics',
+                confidence: 0.88
+              };
+            }
+
+            // Aliases inference
+            if (!item.aliases || item.aliases.trim() === '') {
+              const aliasSet = new Set<string>();
+              const upperAttr = attribute.toUpperCase();
+              const upperEntity = entity.toUpperCase();
+              if (upperAttr) aliasSet.add(upperAttr);
+              if (upperEntity && upperAttr) aliasSet.add(`${upperEntity}_${upperAttr}`);
+
+              // Specific SAP / standard ERP aliases
+              if (rawTokens.includes('cost_center') || rawTokens.includes('kostl')) {
+                ['KOSTL', 'CC_ID', 'COST_CTR', 'CostCenter', 'UD1_CC'].forEach(a => aliasSet.add(a));
+              } else if (rawTokens.includes('tax') || rawTokens.includes('vat') || rawTokens.includes('pib')) {
+                ['STCEG', 'TAX_ID', 'VAT_REG_NO', 'PIB_BROJ', 'VAT_NUM'].forEach(a => aliasSet.add(a));
+              } else if (rawTokens.includes('customer') || rawTokens.includes('kunnr')) {
+                ['KUNNR', 'CUST_NO', 'CUSTOMER_ID', 'ACCOUNT_ID', 'CLIENT_NUM'].forEach(a => aliasSet.add(a));
+              } else if (rawTokens.includes('vendor') || rawTokens.includes('lifnr')) {
+                ['LIFNR', 'VENDOR_ID', 'SUPP_CODE', 'DOBAVLJAC_ID'].forEach(a => aliasSet.add(a));
+              } else if (rawTokens.includes('order') || rawTokens.includes('vbeln')) {
+                ['VBELN', 'ORDER_NUM', 'SO_NUMBER', 'SALES_ORD_ID'].forEach(a => aliasSet.add(a));
+              } else if (rawTokens.includes('material') || rawTokens.includes('matnr')) {
+                ['MATNR', 'SKU', 'PROD_ID', 'ITEM_CODE', 'ARTIKAL'].forEach(a => aliasSet.add(a));
+              } else if (rawTokens.includes('employee') || rawTokens.includes('pernr')) {
+                ['PERNR', 'EMP_ID', 'STAFF_ID', 'ZAPOSLENI_ID'].forEach(a => aliasSet.add(a));
+              } else if (rawTokens.includes('date') || rawTokens.includes('time')) {
+                ['DAT_TIME', 'EVENT_TS', 'CREATED_AT', 'DATUM'].forEach(a => aliasSet.add(a));
+              }
+
+              suggestedFields.aliases = {
+                value: Array.from(aliasSet).join('; '),
+                reason: 'Standard ERP & column abbreviation generation',
+                confidence: 0.92
+              };
+            }
+
+            // Domain inference
+            if (!item.business_domains || item.business_domains === 'General' || item.business_domains.trim() === '') {
+              let domain = 'General Enterprise Master';
+              if (rawTokens.includes('cost') || rawTokens.includes('gl') || rawTokens.includes('finance') || rawTokens.includes('tax') || rawTokens.includes('ledger') || rawTokens.includes('iban')) {
+                domain = 'Finance & General Ledger';
+              } else if (rawTokens.includes('customer') || rawTokens.includes('client') || rawTokens.includes('sales')) {
+                domain = 'Customer Master & Sales';
+              } else if (rawTokens.includes('employee') || rawTokens.includes('hr') || rawTokens.includes('salary') || rawTokens.includes('job')) {
+                domain = 'Human Resources & Payroll';
+              } else if (rawTokens.includes('material') || rawTokens.includes('product') || rawTokens.includes('sku') || rawTokens.includes('inventory')) {
+                domain = 'Supply Chain & Material Master';
+              } else if (rawTokens.includes('vendor') || rawTokens.includes('supplier') || rawTokens.includes('purchase')) {
+                domain = 'Procurement & Sourcing';
+              }
+              suggestedFields.business_domains = {
+                value: domain,
+                reason: 'Taxonomy mapping based on concept tokens',
+                confidence: 0.90
+              };
+            }
+
+            // PII & GDPR detection
+            const isPiiToken = rawTokens.includes('ssn') || rawTokens.includes('tax') || rawTokens.includes('jmbg') ||
+                               rawTokens.includes('email') || rawTokens.includes('phone') || rawTokens.includes('salary') ||
+                               rawTokens.includes('iban') || rawTokens.includes('passport') || rawTokens.includes('birth');
+            
+            const isGdprToken = rawTokens.includes('health') || rawTokens.includes('biometric') || rawTokens.includes('religion') ||
+                                rawTokens.includes('disability') || rawTokens.includes('political');
+
+            if (item.is_pii === undefined || item.is_pii === false || item.is_pii === '') {
+              if (isPiiToken) {
+                suggestedFields.is_pii = {
+                  value: true,
+                  reason: 'Sensitive personally identifiable attribute token detected',
+                  confidence: 0.95
+                };
+              }
+            }
+
+            if (item.is_gdpr === undefined || item.is_gdpr === false || item.is_gdpr === '') {
+              if (isGdprToken) {
+                suggestedFields.is_gdpr = {
+                  value: true,
+                  reason: 'GDPR Special Category sensitivity detected',
+                  confidence: 0.96
+                };
+              }
+            }
+
+            // Data type inference if missing
+            if (!item.data_type || item.data_type.trim() === '') {
+              let dt = 'string';
+              if (rawTokens.includes('amount') || rawTokens.includes('price') || rawTokens.includes('salary') || rawTokens.includes('rate') || rawTokens.includes('val')) {
+                dt = 'decimal';
+              } else if (rawTokens.includes('count') || rawTokens.includes('qty') || rawTokens.includes('level') || rawTokens.includes('year')) {
+                dt = 'integer';
+              } else if (rawTokens.includes('date') || rawTokens.includes('datum')) {
+                dt = 'date';
+              } else if (rawTokens.includes('time') || rawTokens.includes('ts') || rawTokens.includes('timestamp')) {
+                dt = 'timestamp';
+              } else if (rawTokens.includes('is_') || rawTokens.includes('has_') || rawTokens.includes('flag')) {
+                dt = 'boolean';
+              }
+              suggestedFields.data_type = {
+                value: dt,
+                reason: 'Data type inferred from lexical name pattern',
+                confidence: 0.89
+              };
+            }
+          } else {
+            // Knowledge Enrichment
+            if (!item.domain || item.domain === 'General Knowledge' || item.domain.trim() === '') {
+              let dom = 'Master Data';
+              if (rawTokens.includes('hr') || rawTokens.includes('job') || rawTokens.includes('employee') || rawTokens.includes('salary')) {
+                dom = 'Ljudski Resursi (HR)';
+              } else if (rawTokens.includes('finance') || rawTokens.includes('cost') || rawTokens.includes('gl') || rawTokens.includes('tax')) {
+                dom = 'Finance & Accounting';
+              } else if (rawTokens.includes('customer') || rawTokens.includes('sales')) {
+                dom = 'Sales & Customers';
+              } else if (rawTokens.includes('logistics') || rawTokens.includes('material') || rawTokens.includes('warehouse')) {
+                dom = 'Supply Chain';
+              }
+              suggestedFields.domain = {
+                value: dom,
+                reason: 'Inferred enterprise knowledge domain',
+                confidence: 0.88
+              };
+            }
+
+            // Linked Canonical Concepts
+            if (!item.linked_canonical_concepts || item.linked_canonical_concepts.trim() === '') {
+              let targetCanonical = `${entity || 'general'}.${attribute || 'code'}`;
+              if (rawTokens.includes('cost_center') || rawTokens.includes('kostl')) {
+                targetCanonical = 'financial.cost_center';
+              } else if (rawTokens.includes('tax') || rawTokens.includes('vat') || rawTokens.includes('pib')) {
+                targetCanonical = 'customer.tax_id';
+              } else if (rawTokens.includes('customer') || rawTokens.includes('kunnr')) {
+                targetCanonical = 'customer.id';
+              } else if (rawTokens.includes('job') || rawTokens.includes('level') || rawTokens.includes('grade')) {
+                targetCanonical = 'hr.job_level; hr.position_grade';
+              } else if (rawTokens.includes('salary') || rawTokens.includes('plata')) {
+                targetCanonical = 'hr.base_compensation';
+              }
+              suggestedFields.linked_canonical_concepts = {
+                value: targetCanonical,
+                reason: 'Semantic alignment with standard canonical dictionary',
+                confidence: 0.91
+              };
+            }
+
+            // Linked PII & Tags
+            const isPii = rawTokens.includes('ssn') || rawTokens.includes('tax') || rawTokens.includes('jmbg') ||
+                          rawTokens.includes('email') || rawTokens.includes('phone') || rawTokens.includes('salary') ||
+                          rawTokens.includes('iban') || rawTokens.includes('passport');
+
+            if (!item.linked_pii || item.linked_pii === 'no') {
+              if (isPii) {
+                suggestedFields.linked_pii = {
+                  value: 'yes',
+                  reason: 'Personal identification keywords present',
+                  confidence: 0.94
+                };
+              }
+            }
+
+            if (!item.linked_pii_tags || item.linked_pii_tags.trim() === '') {
+              if (isPii) {
+                let tags = 'personal_data';
+                if (rawTokens.includes('salary') || rawTokens.includes('iban')) tags = 'financial_pii, compensation';
+                else if (rawTokens.includes('email') || rawTokens.includes('phone')) tags = 'contact_info, electronic_comm';
+                else if (rawTokens.includes('tax') || rawTokens.includes('ssn')) tags = 'government_id, tax_identifier';
+                suggestedFields.linked_pii_tags = {
+                  value: tags,
+                  reason: 'PII taxonomy tag synthesis',
+                  confidence: 0.93
+                };
+              }
+            }
+
+            if (!item.linked_data_subjects || item.linked_data_subjects.trim() === '') {
+              let subjects = 'Enterprise Entity';
+              if (rawTokens.includes('employee') || rawTokens.includes('hr') || rawTokens.includes('salary') || rawTokens.includes('job')) {
+                subjects = 'Employee, Candidate';
+              } else if (rawTokens.includes('customer') || rawTokens.includes('client')) {
+                subjects = 'Customer, Consumer';
+              } else if (rawTokens.includes('vendor') || rawTokens.includes('supplier')) {
+                subjects = 'Vendor, Contractor';
+              }
+              suggestedFields.linked_data_subjects = {
+                value: subjects,
+                reason: 'Data subject classification for GDPR compliance',
+                confidence: 0.90
+              };
+            }
+
+            if (!item.source_systems || item.source_systems === 'Enterprise System' || item.source_systems.trim() === '') {
+              let sys = 'SAP ERP; Workday; Core DB';
+              if (rawTokens.includes('cost_center') || rawTokens.includes('kostl') || rawTokens.includes('gl')) {
+                sys = 'SAP S/4HANA; OneStream XF';
+              } else if (rawTokens.includes('job') || rawTokens.includes('hr') || rawTokens.includes('salary')) {
+                sys = 'Workday HR; SuccessFactors';
+              } else if (rawTokens.includes('customer') || rawTokens.includes('sales')) {
+                sys = 'Salesforce CRM; SAP SD';
+              }
+              suggestedFields.source_systems = {
+                value: sys,
+                reason: 'Typical enterprise source system mapping',
+                confidence: 0.85
+              };
+            }
+          }
+
+          return {
+            rowNumber: item.rowNumber || idx + 1,
+            concept_id: conceptId,
+            suggestedFields
+          };
+        });
+
+        return {
+          enrichedItems,
+          summary: `Rule-based enrichment processed for ${enrichedItems.length} concepts.`,
+          fallbackUsed: true
+        };
+      };
+
+      // 3. AI Execution via Circuit Breaker
+      const execution = await serverCircuitBreaker.execute(async () => {
+        if (!process.env.GEMINI_API_KEY) {
+          throw new Error("GEMINI_API_KEY environment variable is not set.");
+        }
+
+        const ai = getAIClient();
+        const prompt = `You are Semantra's Enterprise AI Metadata & Canonical Governance Engine.
+Enrich the provided missing metadata for ${type === 'canonical' ? 'Canonical Glossary concepts' : 'Knowledge layer concepts'}.
+
+Input Items to enrich:
+${JSON.stringify(safeItems.slice(0, 40))}
+
+Existing Catalog Domain Context:
+${JSON.stringify(catalogContext || {})}
+
+STRICT ENRICHMENT CRITERIA:
+1. ONLY return suggested values for fields that are missing, blank, or generic ('General', 'Enterprise System'). Do NOT overwrite user-provided specific values.
+2. For descriptions: write clear, formal business definitions (1-2 sentences) in professional terminology.
+3. For aliases: provide 3 to 6 high-value synonyms separated by semicolons, including SAP/Oracle table/field names (e.g. KOSTL, KUNNR, MATNR, VBELN, PERNR, STCEG, IBAN), uppercase abbreviations, and regional synonyms.
+4. For PII/GDPR: detect whether the attribute concerns an individual person, compensation, identity, contact, health or financial record.
+5. For data_type (canonical): choose from 'string', 'decimal', 'integer', 'timestamp', 'date', 'boolean', 'code_list'.
+6. For linked_canonical_concepts (knowledge): suggest appropriate standard canonical concept IDs in entity.attribute format.
+
+Respond with valid JSON matching the schema.`;
+
+        const response = await ai.models.generateContent({
+          model: "gemini-3.8-flash",
+          contents: prompt,
+          config: {
+            systemInstruction: "You are an enterprise data architect and data steward assisting in catalog enrichment and governance.",
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: Type.OBJECT,
+              properties: {
+                enrichedItems: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      concept_id: { type: Type.STRING },
+                      suggestedFields: {
+                        type: Type.OBJECT,
+                        properties: {
+                          description: {
+                            type: Type.OBJECT,
+                            properties: {
+                              value: { type: Type.STRING },
+                              reason: { type: Type.STRING },
+                              confidence: { type: Type.NUMBER }
+                            }
+                          },
+                          aliases: {
+                            type: Type.OBJECT,
+                            properties: {
+                              value: { type: Type.STRING },
+                              reason: { type: Type.STRING },
+                              confidence: { type: Type.NUMBER }
+                            }
+                          },
+                          business_domains: {
+                            type: Type.OBJECT,
+                            properties: {
+                              value: { type: Type.STRING },
+                              reason: { type: Type.STRING },
+                              confidence: { type: Type.NUMBER }
+                            }
+                          },
+                          data_type: {
+                            type: Type.OBJECT,
+                            properties: {
+                              value: { type: Type.STRING },
+                              reason: { type: Type.STRING },
+                              confidence: { type: Type.NUMBER }
+                            }
+                          },
+                          is_pii: {
+                            type: Type.OBJECT,
+                            properties: {
+                              value: { type: Type.BOOLEAN },
+                              reason: { type: Type.STRING },
+                              confidence: { type: Type.NUMBER }
+                            }
+                          },
+                          is_gdpr: {
+                            type: Type.OBJECT,
+                            properties: {
+                              value: { type: Type.BOOLEAN },
+                              reason: { type: Type.STRING },
+                              confidence: { type: Type.NUMBER }
+                            }
+                          },
+                          domain: {
+                            type: Type.OBJECT,
+                            properties: {
+                              value: { type: Type.STRING },
+                              reason: { type: Type.STRING },
+                              confidence: { type: Type.NUMBER }
+                            }
+                          },
+                          linked_canonical_concepts: {
+                            type: Type.OBJECT,
+                            properties: {
+                              value: { type: Type.STRING },
+                              reason: { type: Type.STRING },
+                              confidence: { type: Type.NUMBER }
+                            }
+                          },
+                          linked_pii: {
+                            type: Type.OBJECT,
+                            properties: {
+                              value: { type: Type.STRING },
+                              reason: { type: Type.STRING },
+                              confidence: { type: Type.NUMBER }
+                            }
+                          },
+                          linked_gdpr_special: {
+                            type: Type.OBJECT,
+                            properties: {
+                              value: { type: Type.STRING },
+                              reason: { type: Type.STRING },
+                              confidence: { type: Type.NUMBER }
+                            }
+                          },
+                          linked_pii_tags: {
+                            type: Type.OBJECT,
+                            properties: {
+                              value: { type: Type.STRING },
+                              reason: { type: Type.STRING },
+                              confidence: { type: Type.NUMBER }
+                            }
+                          },
+                          linked_data_subjects: {
+                            type: Type.OBJECT,
+                            properties: {
+                              value: { type: Type.STRING },
+                              reason: { type: Type.STRING },
+                              confidence: { type: Type.NUMBER }
+                            }
+                          },
+                          source_systems: {
+                            type: Type.OBJECT,
+                            properties: {
+                              value: { type: Type.STRING },
+                              reason: { type: Type.STRING },
+                              confidence: { type: Type.NUMBER }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    required: ["concept_id", "suggestedFields"]
+                  }
+                },
+                summary: { type: Type.STRING }
+              },
+              required: ["enrichedItems"]
+            }
+          }
+        });
+
+        return JSON.parse(response.text || "{}");
+      }, fallbackEnricher);
+
+      res.json({
+        ...execution.data,
+        fallbackUsed: execution.fallbackUsed,
+        fallbackReason: execution.fallbackReason,
+        circuitBreakerState: execution.circuitState,
+        piiSanitizedCount: piiCheck.detectedCount
+      });
+    } catch (err: any) {
+      console.error("Error in AI metadata enrichment:", err);
+      res.status(500).json({ error: err.message || "AI metadata enrichment failed" });
     }
   });
 
@@ -572,7 +1019,7 @@ CRITICAL RULES:
         const userPrompt = `${contextString}${recentHistory}\nUser Question: ${safeQuery}`;
 
         const response = await ai.models.generateContent({
-          model: "gemini-3.7-flash",
+          model: "gemini-3.8-flash",
           contents: userPrompt,
           config: {
             systemInstruction,

@@ -35,7 +35,11 @@ import {
   Server,
   FileCheck2,
   Clock,
-  FolderGit2
+  FolderGit2,
+  UploadCloud,
+  Table,
+  FileSpreadsheet,
+  Undo2
 } from 'lucide-react';
 
 interface HelpModalProps {
@@ -54,14 +58,16 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
     { id: 'mental_model', title: '2. Canonical, Knowledge & Overlay Model', icon: GitBranch, badge: 'Core Theory' },
     { id: 'overview', title: '3. Overview & Architecture', icon: BookOpen },
     { id: 'pipeline', title: '4. Workspace Mapping Pipeline', icon: Layers, badge: 'Closed-Loop (M1 ⇄ M2)' },
-    { id: 'bounded_ai', title: '5. Bounded AI Gate & Rules', icon: Sparkles, badge: 'AI Surfaces (1-14)' },
+    { id: 'bounded_ai', title: '5. Bounded AI Gate & Rules', icon: Sparkles, badge: 'AI Surfaces (1-15)' },
     { id: 'governance', title: '6. Governance & Canonical Catalog', icon: ShieldCheck },
     { id: 'benchmarks', title: '7. Benchmarks & Learning Curves', icon: TrendingUp },
     { id: 'standalone_web', title: '8. Web Workbench vs Python CLI', icon: Terminal },
-    { id: 'workflows', title: '9. Supported Workflows & Navigation (WF-01–13)', icon: GitPullRequest, badge: 'WF-01–13' },
+    { id: 'workflows', title: '9. Supported Workflows & Navigation (WF-01–14)', icon: GitPullRequest, badge: 'WF-01–14' },
     { id: 'mtls_hsm_security', title: '10. Zero-Trust Security Triad (mTLS + ABAC + HSM)', icon: Fingerprint, badge: 'Zero-Trust Sec' },
     { id: 'architecture_studios', title: '11. Architecture Studios (P0–P2 Labs)', icon: Sparkles, badge: 'P0–P2 Studios' },
-    { id: 'data_contracts_gitops', title: '12. Data Contracts (ODC) & GitOps CI/CD', icon: FileCheck2, badge: 'Data Mesh & GitOps' }
+    { id: 'data_contracts_gitops', title: '12. Data Contracts (ODC) & GitOps CI/CD', icon: FileCheck2, badge: 'Data Mesh & GitOps' },
+    { id: 'import_enrichment_studio', title: '13. Import & AI Enrichment Studio', icon: Sparkles, badge: 'Ingestion & Grid' },
+    { id: 'hitl_execution_console', title: '14. HITL Execution Console & Safety Gate (WF-15)', icon: ShieldCheck, badge: 'Dry-Run & Commit' }
   ];
 
   const filteredSections = helpSections.filter(sec => 
@@ -1329,6 +1335,12 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                           <td className="p-2.5"><span className="px-1.5 py-0.5 bg-emerald-500/20 text-emerald-300 rounded font-mono text-[10px]">Automated Shield</span></td>
                           <td className="p-2.5 text-slate-300">Pre-flight regex tokenization (emails/IBAN/PIB/JMBG) + 3-state circuit breaker with fallback to heuristics.</td>
                         </tr>
+                        <tr className="hover:bg-slate-900/40">
+                          <td className="p-2.5 font-semibold text-purple-400 font-mono">15. Ingestion &amp; AI Enrichment Studio</td>
+                          <td className="p-2.5 font-mono text-slate-400">Governance &gt; Import &amp; AI Studio</td>
+                          <td className="p-2.5"><span className="px-1.5 py-0.5 bg-purple-500/20 text-purple-300 rounded font-mono text-[10px]">Staged Grid / Batch</span></td>
+                          <td className="p-2.5 text-slate-300">Granular gap enrichment: definitions, ERP aliases, domain tagging, canonical linking &amp; PII discovery with color-coded diff grid, row revert, and cryptographic audit commit.</td>
+                        </tr>
                       </tbody>
                     </table>
                   </div>
@@ -1338,7 +1350,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                 <div className="space-y-3">
                   <h4 className="font-bold text-slate-200 text-xs uppercase font-mono tracking-wider text-emerald-400 flex items-center gap-2">
                     <Zap className="w-4 h-4 text-emerald-400" />
-                    Complete Inventory of Active Bounded AI Surfaces & Integration Points (14 Active Surfaces)
+                    Complete Inventory of Active Bounded AI Surfaces & Integration Points (15 Active Surfaces)
                   </h4>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
@@ -1591,6 +1603,24 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                       <div className="bg-slate-900 p-2 rounded border border-slate-800 text-[10px] font-mono text-slate-400">
                         <span className="text-indigo-300 font-semibold">Location:</span> Workspace &gt; Mode Selector (Mode 2: Contract Reverse Engineering)<br/>
                         <span className="text-indigo-300 font-semibold">Outcome:</span> Smart Graph FK Explorer, Assertions Synchronization, Canonical JSON Schemas, and Executive Architecture Reports
+                      </div>
+                    </div>
+
+                    {/* Point 15 */}
+                    <div className="p-3.5 bg-slate-950 border border-purple-800/60 rounded-xl space-y-2 md:col-span-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-purple-400 font-mono text-xs flex items-center gap-1.5">
+                          <Sparkles className="w-4 h-4 text-purple-400" />
+                          15. Bulk Ingestion &amp; AI Enrichment Studio (Interactive Review Grid &amp; Pre-flight)
+                        </span>
+                        <span className="px-1.5 py-0.5 text-[9px] bg-purple-500/20 text-purple-300 rounded font-mono font-bold">Governance AI Studio</span>
+                      </div>
+                      <p className="text-slate-300 text-[11px] leading-relaxed">
+                        Onboards messy enterprise glossaries and knowledge rule tables into Semantra&apos;s active branch via a 4-phase staged workflow. Deterministically diagnoses structural gaps (missing definitions, unclassified business domains, absent ERP synonyms, unlinked canonical tags, PII indicators). Executes targeted, bounded AI modules with temperature 0.0 to synthesize formal descriptions, extract SAP/Salesforce aliases, and classify domains. All proposals render in an interactive staging grid with color-coded diff badges and granular cell/row revert controls before an audited, cryptographically hashed commit.
+                      </p>
+                      <div className="bg-slate-900 p-2 rounded border border-slate-800 text-[10px] font-mono text-slate-400">
+                        <span className="text-purple-300 font-semibold">Location:</span> Governance &gt; Import &amp; AI Studio (or &quot;AI Ingestion Studio&quot; button in Canonical/Knowledge views)<br/>
+                        <span className="text-purple-300 font-semibold">Guarantees:</span> Zero silent catalog commits, pre-flight PII masking with circuit breaker, row-level revert, and cryptographic audit ledger trail.
                       </div>
                     </div>
                   </div>
@@ -1919,6 +1949,16 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                         Every merge execution generates a cryptographic commit hash (<code className="text-purple-300 font-mono">c7f92a1...</code>) and idempotency transaction key, appended to an immutable JSON-exportable audit ledger.
                       </p>
                     </div>
+
+                    <div className="p-3 bg-slate-900 border border-slate-800 rounded-lg space-y-1.5 md:col-span-3">
+                      <span className="font-bold text-indigo-400 font-mono block flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                        4. Bulk Ingestion &amp; AI Enrichment Studio (Interactive Grid &amp; Pre-flight Commit)
+                      </span>
+                      <p className="text-slate-400 text-[11px] leading-relaxed">
+                        High-throughput onboarding workbench for external enterprise glossaries and knowledge rules. Supports CSV/JSON uploads, raw text ingestion, and instant enterprise test templates with deliberate gaps. Automatically scans for missing definitions, ERP aliases, and domain classifications, executes targeted AI enrichment with individual cell/row rollbacks in an interactive preview grid, and commits verified records to the active branch with automatic audit logging.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -2207,7 +2247,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-bold text-white flex items-center gap-2">
                       <GitPullRequest className="w-5 h-5 text-emerald-400" />
-                      9. Semantra Pilot-Ready Workflows (WF-01 – WF-13)
+                      9. Semantra Pilot-Ready Workflows (WF-01 – WF-14)
                     </h3>
                     <span className="px-2 py-0.5 text-[10px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded">
                       Supported Operations
@@ -2436,6 +2476,35 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                       </div>
                     </div>
 
+                    {/* WF-14 */}
+                    <div className="p-4 bg-slate-950 border border-purple-900/60 rounded-xl space-y-3">
+                      <div className="flex items-center justify-between border-b border-purple-800/80 pb-2">
+                        <span className="font-bold text-purple-400 font-mono">WF-14 • Bulk Ingestion &amp; AI Enrichment Studio (Staged Review Grid)</span>
+                        <span className="px-1.5 py-0.5 text-[9px] bg-purple-500/20 text-purple-300 rounded font-mono">Governance &gt; Import &amp; AI Studio</span>
+                      </div>
+                      <p className="text-slate-300 text-[11px] leading-relaxed">
+                        <strong>Purpose:</strong> Rapidly onboard raw enterprise glossaries, SAP/Salesforce dictionaries, and knowledge tables into Semantra&apos;s active branch with automated gap detection, granular AI enrichment, and full steward review controls.
+                      </p>
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-2 font-mono text-[10px] text-slate-300">
+                        <div className="p-2 bg-slate-900 rounded border border-slate-800">
+                          <span className="text-purple-400 font-bold block">1. Ingest &amp; Staging</span>
+                          Upload CSV/JSON, paste raw text, or load demo enterprise datasets.
+                        </div>
+                        <div className="p-2 bg-slate-900 rounded border border-slate-800">
+                          <span className="text-cyan-400 font-bold block">2. Gap Diagnostics</span>
+                          Deterministic KPI check: schema validity, missing descriptions &amp; ERP aliases.
+                        </div>
+                        <div className="p-2 bg-slate-900 rounded border border-slate-800">
+                          <span className="text-emerald-400 font-bold block">3. AI Review Grid</span>
+                          Granular AI modules with color-coded diff badges, row editing &amp; individual revert.
+                        </div>
+                        <div className="p-2 bg-slate-900 rounded border border-slate-800">
+                          <span className="text-amber-400 font-bold block">4. Audit Commit</span>
+                          Pre-flight collision handling (upsert/skip), SHA-256 integrity hash &amp; audit logging.
+                        </div>
+                      </div>
+                    </div>
+
                   </div>
                 </div>
 
@@ -2457,7 +2526,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                     <div className="p-3 bg-slate-900 border border-slate-800 rounded-lg space-y-1.5">
                       <span className="font-bold text-cyan-400 font-mono text-xs block">Canonical Normalization Path</span>
                       <p className="text-slate-300 text-[11px] font-mono leading-relaxed">
-                        WF-03 &rarr; WF-04 &rarr; WF-05 &rarr; WF-06 &rarr; (WF-08 / WF-10 / WF-11)
+                        WF-14 (AI Ingestion) &rarr; WF-03 &rarr; WF-04 &rarr; WF-05 &rarr; WF-06 &rarr; (WF-08 / WF-10 / WF-11)
                       </p>
                     </div>
                   </div>
@@ -2973,6 +3042,362 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                   </h4>
                   <p className="text-xs text-slate-400 leading-relaxed font-sans">
                     Navigate to <strong>Workspace &rarr; Step 4 (Code Output)</strong>. Click on the <strong>Data Contract (ODC)</strong> tab to view and configure SLA/Evolution policies, or click <strong>GitOps / CI/CD (PR)</strong> in the top-right toolbar to open the pipeline generator and create an automated Pull Request.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* SECTION 13: BULK INGESTION & AI ENRICHMENT STUDIO */}
+            {activeSection === 'import_enrichment_studio' && (
+              <div className="space-y-6 animate-in fade-in duration-150">
+                <div className="border-b border-slate-800 pb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 text-xs font-mono bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded font-semibold">
+                      Governance Onboarding Hub
+                    </span>
+                    <span className="px-2 py-0.5 text-xs font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded font-semibold">
+                      Human-in-the-Loop AI Grid
+                    </span>
+                    <span className="px-2 py-0.5 text-xs font-mono bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded font-semibold">
+                      Zero Silent Commits
+                    </span>
+                  </div>
+                  <h3 className="text-lg font-bold text-white mt-1 font-sans flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-purple-400" />
+                    13. Bulk Ingestion &amp; AI Enrichment Studio
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                    Authoritative guide to the high-throughput enterprise catalog onboarding workspace, automated structural gap diagnostics, granular AI enrichment modules, and the interactive pre-commit review grid.
+                  </p>
+                </div>
+
+                {/* Framing & Purpose */}
+                <div className="p-4 bg-gradient-to-r from-slate-950 via-purple-950/30 to-slate-950 border border-purple-900/60 rounded-xl space-y-3">
+                  <h4 className="text-xs font-bold text-purple-300 uppercase tracking-wider font-mono flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                    The Onboarding Problem: Why We Built the AI Ingestion Studio
+                  </h4>
+                  <p className="text-slate-300 text-xs leading-relaxed font-sans">
+                    Enterprise organizations adopting Semantra rarely possess complete, pristine data dictionaries. Legacy databases (SAP ECC/S4, Salesforce, Oracle Financials, mainframe flat files) typically have cryptic field names (<code className="text-purple-300 font-mono">KUNNR</code>, <code className="text-purple-300 font-mono">VBELN</code>, <code className="text-purple-300 font-mono">DMBTR</code>), missing or single-word descriptions, and zero domain classification.
+                  </p>
+                  <p className="text-slate-300 text-xs leading-relaxed font-sans">
+                    The <strong>Ingestion &amp; AI Enrichment Studio</strong> bridges this gap: instead of forcing data stewards to manually curate thousands of terms or trusting unverified black-box AI bulk imports, it provides a <strong>deterministic-first, staged 4-phase pipeline</strong> with an interactive review grid where every AI suggestion is inspected, filterable, and reversible prior to durable catalog commit.
+                  </p>
+                </div>
+
+                {/* 4-Phase Pipeline */}
+                <div className="space-y-3">
+                  <h4 className="text-xs font-bold text-slate-100 uppercase tracking-wider font-mono flex items-center gap-2">
+                    <Layers className="w-4 h-4 text-purple-400" />
+                    The 4-Phase Staged Ingestion Lifecycle
+                  </h4>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                    {/* Phase 1 */}
+                    <div className="p-3.5 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
+                      <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                        <span className="font-bold text-purple-400 font-mono text-xs flex items-center gap-1.5">
+                          <UploadCloud className="w-4 h-4" />
+                          Phase 1: Ingest &amp; Staging
+                        </span>
+                        <span className="px-1.5 py-0.5 text-[9px] bg-purple-500/20 text-purple-300 rounded font-mono">Multi-Format Input</span>
+                      </div>
+                      <p className="text-slate-300 text-[11px] leading-relaxed">
+                        Ingests data from multiple sources without altering the active canonical catalog:
+                      </p>
+                      <ul className="list-disc list-inside text-slate-400 text-[10px] space-y-1 font-mono">
+                        <li><strong>CSV Upload / Paste:</strong> Auto-detects delimiters (comma, tab, semicolon) and column headers.</li>
+                        <li><strong>JSON Array:</strong> Parses standard JSON arrays of concept objects.</li>
+                        <li><strong>Demo Enterprise Presets:</strong> 1-Click loaders with intentional gaps (SAP ERP Logistics, Salesforce CRM, Healthcare FHIR) for instant evaluation.</li>
+                        <li><strong>Target Registry:</strong> Selects target: <em>Canonical Glossary</em> or <em>System Knowledge Rules</em>.</li>
+                      </ul>
+                    </div>
+
+                    {/* Phase 2 */}
+                    <div className="p-3.5 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
+                      <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                        <span className="font-bold text-cyan-400 font-mono text-xs flex items-center gap-1.5">
+                          <Calculator className="w-4 h-4" />
+                          Phase 2: Structural Gap Diagnostics
+                        </span>
+                        <span className="px-1.5 py-0.5 text-[9px] bg-cyan-500/20 text-cyan-300 rounded font-mono">Deterministic Health</span>
+                      </div>
+                      <p className="text-slate-300 text-[11px] leading-relaxed">
+                        Executes deterministic heuristic checks across the staged payload to quantify data quality:
+                      </p>
+                      <ul className="list-disc list-inside text-slate-400 text-[10px] space-y-1 font-mono">
+                        <li><strong>Schema Validation:</strong> Checks required fields (concept name, entity type, data type).</li>
+                        <li><strong>Missing Definitions:</strong> Flags empty or placeholder descriptions (&lt; 15 chars).</li>
+                        <li><strong>ERP Synonym Absence:</strong> Detects terms lacking standard enterprise aliases.</li>
+                        <li><strong>Domain Gaps:</strong> Identifies unclassified or generic &quot;General&quot; business domains.</li>
+                        <li><strong>PII Indicators:</strong> Flags potential privacy attributes (email, tax ID, phone, SSN).</li>
+                      </ul>
+                    </div>
+
+                    {/* Phase 3 */}
+                    <div className="p-3.5 bg-slate-950 border border-purple-900/60 rounded-xl space-y-2">
+                      <div className="flex items-center justify-between border-b border-purple-800/60 pb-2">
+                        <span className="font-bold text-emerald-400 font-mono text-xs flex items-center gap-1.5">
+                          <Table className="w-4 h-4" />
+                          Phase 3: AI Enrichment &amp; Review Grid
+                        </span>
+                        <span className="px-1.5 py-0.5 text-[9px] bg-emerald-500/20 text-emerald-300 rounded font-mono">Interactive Human Gate</span>
+                      </div>
+                      <p className="text-slate-300 text-[11px] leading-relaxed">
+                        The central interactive workbench. Allows granular triggering of bounded AI enrichment modules:
+                      </p>
+                      <ul className="list-disc list-inside text-slate-400 text-[10px] space-y-1 font-mono">
+                        <li><strong>Granular AI Controls:</strong> Run all modules or targeted actions (Definitions, Aliases, Domains).</li>
+                        <li><strong>Visual AI Diff Badges:</strong> Every enriched field displays a prominent purple <span className="px-1 py-0.2 bg-purple-900 text-purple-300 rounded text-[9px]">AI</span> indicator.</li>
+                        <li><strong>Grid Filters:</strong> Instant slicing: <em>All</em>, <em>Gaps Only</em>, <em>AI Enriched Only</em>, <em>Invalid</em>.</li>
+                        <li><strong>Row &amp; Bulk Rollback:</strong> Revert any single row or all AI changes with 1-click undo.</li>
+                      </ul>
+                    </div>
+
+                    {/* Phase 4 */}
+                    <div className="p-3.5 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
+                      <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                        <span className="font-bold text-amber-400 font-mono text-xs flex items-center gap-1.5">
+                          <ShieldCheck className="w-4 h-4" />
+                          Phase 4: Pre-flight &amp; Audit Commit
+                        </span>
+                        <span className="px-1.5 py-0.5 text-[9px] bg-amber-500/20 text-amber-300 rounded font-mono">Cryptographic Ledger</span>
+                      </div>
+                      <p className="text-slate-300 text-[11px] leading-relaxed">
+                        Final gate before persisting records to the active catalog branch:
+                      </p>
+                      <ul className="list-disc list-inside text-slate-400 text-[10px] space-y-1 font-mono">
+                        <li><strong>Collision Handling:</strong> Select <em>Upsert / Merge</em> (enrich existing), <em>Skip</em>, or <em>Abort</em>.</li>
+                        <li><strong>Dry-Run Pre-flight:</strong> Validates target branch compatibility and collision count.</li>
+                        <li><strong>Cryptographic SHA-256 Hash:</strong> Generates tamper-evident batch digest (<code className="text-amber-300">sha256:7b92f...</code>).</li>
+                        <li><strong>Immutable Audit Log:</strong> Automatically registers batch metadata, row counts, and steward identity.</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Granular AI Modules Matrix */}
+                <div className="space-y-3">
+                  <h4 className="text-xs font-bold text-slate-100 uppercase tracking-wider font-mono flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-purple-400" />
+                    Granular AI Enrichment Modules (Bounded Prompt Specification)
+                  </h4>
+                  <div className="overflow-x-auto border border-slate-800 rounded-xl bg-slate-950/80">
+                    <table className="w-full text-left border-collapse text-[11px] font-sans">
+                      <thead>
+                        <tr className="bg-slate-900/90 text-slate-400 font-mono text-[10px] uppercase border-b border-slate-800">
+                          <th className="p-2.5">AI Module</th>
+                          <th className="p-2.5">Input Context</th>
+                          <th className="p-2.5">Output Synthesis</th>
+                          <th className="p-2.5">Guardrail &amp; Scope Boundary</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800/60 text-slate-300">
+                        <tr className="hover:bg-slate-900/40">
+                          <td className="p-2.5 font-semibold text-purple-400 font-mono">Auto-Enrich All Gaps</td>
+                          <td className="p-2.5 text-slate-400">All concept attributes with detected gaps</td>
+                          <td className="p-2.5 text-slate-300">Executes all sub-modules sequentially on unfilled fields only.</td>
+                          <td className="p-2.5 font-mono text-emerald-400 text-[10px]">Never overwrites existing non-empty steward descriptions.</td>
+                        </tr>
+                        <tr className="hover:bg-slate-900/40">
+                          <td className="p-2.5 font-semibold text-indigo-300 font-mono">Generate Definitions</td>
+                          <td className="p-2.5 text-slate-400">Concept name, entity type, data type, domain</td>
+                          <td className="p-2.5 text-slate-300">Produces clear 1–2 sentence formal enterprise business descriptions.</td>
+                          <td className="p-2.5 font-mono text-indigo-300 text-[10px]">Bounded length (30–250 chars). Free of marketing fluff.</td>
+                        </tr>
+                        <tr className="hover:bg-slate-900/40">
+                          <td className="p-2.5 font-semibold text-cyan-400 font-mono">Synthesize ERP Aliases</td>
+                          <td className="p-2.5 text-slate-400">Standard business concept name</td>
+                          <td className="p-2.5 text-slate-300">Discovers SAP table fields (e.g. KUNNR), Salesforce API names (e.g. AccountNumber), and EDI codes.</td>
+                          <td className="p-2.5 font-mono text-cyan-400 text-[10px]">Strictly normalized snake_case / uppercase acronym tags.</td>
+                        </tr>
+                        <tr className="hover:bg-slate-900/40">
+                          <td className="p-2.5 font-semibold text-emerald-400 font-mono">Align Business Domains</td>
+                          <td className="p-2.5 text-slate-400">Concept context and existing catalog taxonomies</td>
+                          <td className="p-2.5 text-slate-300">Classifies into standard enterprise taxonomy (Customer, Billing, Logistics, HR, Finance).</td>
+                          <td className="p-2.5 font-mono text-emerald-400 text-[10px]">Closed taxonomy matching; prevents taxonomy sprawl.</td>
+                        </tr>
+                        <tr className="hover:bg-slate-900/40">
+                          <td className="p-2.5 font-semibold text-blue-400 font-mono">Link Canonical Concepts</td>
+                          <td className="p-2.5 text-slate-400">Knowledge rule source/target terms</td>
+                          <td className="p-2.5 text-slate-300">Identifies and links related master canonical glossary concepts.</td>
+                          <td className="p-2.5 font-mono text-blue-400 text-[10px]">Restricted to registered concepts in the active branch.</td>
+                        </tr>
+                        <tr className="hover:bg-slate-900/40">
+                          <td className="p-2.5 font-semibold text-rose-400 font-mono">Detect &amp; Tag PII</td>
+                          <td className="p-2.5 text-slate-400">Concept semantics and sample data patterns</td>
+                          <td className="p-2.5 text-slate-300">Attaches GDPR / HIPAA privacy compliance tags (PII:EMAIL, PII:FINANCIAL, PII:IDENTIFIER).</td>
+                          <td className="p-2.5 font-mono text-rose-400 text-[10px]">Deterministic regex verification + high-sensitivity classifier.</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Zero Data Leakage & Circuit Breaker Architecture */}
+                <div className="p-4 bg-slate-950 border border-emerald-900/50 rounded-xl space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-bold text-emerald-300 uppercase tracking-wider font-mono flex items-center gap-2">
+                      <Shield className="w-4 h-4 text-emerald-400" />
+                      Zero Data Leakage &amp; Reliability Safeguards
+                    </h4>
+                    <span className="px-2 py-0.5 text-[10px] font-mono bg-emerald-500/20 text-emerald-300 rounded border border-emerald-500/30">
+                      Zero-Trust Privacy
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs font-sans">
+                    <div className="p-3 bg-slate-900 rounded-lg border border-slate-800 space-y-1">
+                      <strong className="text-emerald-400 font-mono block">1. Pre-Flight PII Masking:</strong>
+                      <span className="text-slate-300 text-[11px] leading-relaxed">
+                        Before prompt payloads reach Gemini, regular expression tokenizers sanitize sample customer values, bank IBANs, and national IDs to guarantee zero raw enterprise data leakage.
+                      </span>
+                    </div>
+                    <div className="p-3 bg-slate-900 rounded-lg border border-slate-800 space-y-1">
+                      <strong className="text-amber-400 font-mono block">2. Fault-Tolerant Circuit Breaker:</strong>
+                      <span className="text-slate-300 text-[11px] leading-relaxed">
+                        If LLM API calls experience latency spikes (&gt;8s) or rate limits, the 3-state circuit breaker trips and falls back to deterministic heuristic synonym dictionaries instantly without crashing the UI.
+                      </span>
+                    </div>
+                    <div className="p-3 bg-slate-900 rounded-lg border border-slate-800 space-y-1">
+                      <strong className="text-purple-400 font-mono block">3. Branch Isolation:</strong>
+                      <span className="text-slate-300 text-[11px] leading-relaxed">
+                        Imports are applied strictly to the selected active branch (<code className="text-purple-300 font-mono">main</code> or sandbox feature branches). Production mappings remain untouched until explicit steward approval.
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Where to Access */}
+                <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
+                  <h4 className="font-bold text-slate-200 text-xs font-sans flex items-center gap-2">
+                    <Sliders className="w-4 h-4 text-indigo-400" />
+                    How to Access in Semantra
+                  </h4>
+                  <p className="text-xs text-slate-400 leading-relaxed font-sans">
+                    1. In the main navigation bar, click <strong>Governance &amp; Catalog</strong>.<br />
+                    2. In the Governance radio selector, select <strong>Import &amp; AI Studio</strong>.<br />
+                    3. Alternatively, in the <strong>Canonical</strong> or <strong>Knowledge</strong> tabs, click the purple <strong>AI Ingestion Studio</strong> quick-action button in the table toolbar to launch the studio directly.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* SECTION 14: HITL Execution Console & Safety Gate (WF-15) */}
+            {activeSection === 'hitl_execution_console' && (
+              <div className="space-y-6">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-bold text-white font-sans">
+                      14. Human-in-the-Loop (HITL) Execution Console &amp; Safety Gate (WF-15)
+                    </h3>
+                    <span className="px-2 py-0.5 text-[10px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded font-bold">
+                      Zero Unintended Mutations
+                    </span>
+                  </div>
+                  <p className="text-slate-400 text-xs mt-1">
+                    Deterministic verification air-gap between automated mapping algorithms and customer production databases, eliminating AI hallucinations and silent schema corruption.
+                  </p>
+                </div>
+
+                {/* 4-Stage Workflow Cards */}
+                <div className="space-y-3">
+                  <h4 className="text-xs font-bold text-slate-100 uppercase tracking-wider font-mono flex items-center gap-2">
+                    <GitBranch className="w-4 h-4 text-emerald-400" />
+                    Architectural Workflow (HITL Execution Flow)
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <div className="p-3 bg-slate-950/80 border border-slate-800 rounded-xl space-y-2">
+                      <div className="flex items-center gap-2 text-indigo-400 font-mono text-xs font-bold">
+                        <Zap className="w-4 h-4" />
+                        <span>1. Ingest &amp; Dry-Run</span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 leading-relaxed">
+                        Simulates batch mapping in an isolated memory space. <strong>Zero mutations</strong> occur in customer production databases.
+                      </p>
+                    </div>
+
+                    <div className="p-3 bg-slate-950/80 border border-slate-800 rounded-xl space-y-2">
+                      <div className="flex items-center gap-2 text-amber-400 font-mono text-xs font-bold">
+                        <AlertTriangle className="w-4 h-4" />
+                        <span>2. Exception Engine</span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 leading-relaxed">
+                        Auto-approves safe records (&ge; 90% match). Automatically isolates low-confidence aliases and schema type violations.
+                      </p>
+                    </div>
+
+                    <div className="p-3 bg-slate-950/80 border border-slate-800 rounded-xl space-y-2">
+                      <div className="flex items-center gap-2 text-blue-400 font-mono text-xs font-bold">
+                        <Sliders className="w-4 h-4" />
+                        <span>3. Human Review</span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 leading-relaxed">
+                        Data Steward triages only flagged exceptions. Apply to All Similar propagates single decisions across the entire batch.
+                      </p>
+                    </div>
+
+                    <div className="p-3 bg-slate-950/80 border border-slate-800 rounded-xl space-y-2">
+                      <div className="flex items-center gap-2 text-emerald-400 font-mono text-xs font-bold">
+                        <ShieldCheck className="w-4 h-4" />
+                        <span>4. Verified Commit</span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 leading-relaxed">
+                        Atomic database commit with SHA-256 batch cryptographic seal, digital sign-off, and exportable SOC2/ISO 27001 audit logs.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Key Enterprise Capabilities Table */}
+                <div className="space-y-3">
+                  <h4 className="text-xs font-bold text-slate-100 uppercase tracking-wider font-mono flex items-center gap-2">
+                    <Table className="w-4 h-4 text-emerald-400" />
+                    Key Enterprise Incident Resolution Strategies
+                  </h4>
+                  <div className="overflow-x-auto border border-slate-800 rounded-xl bg-slate-950/60">
+                    <table className="w-full text-left border-collapse text-[11px]">
+                      <thead>
+                        <tr className="bg-slate-900 border-b border-slate-800 text-slate-400 font-mono text-[10px] uppercase">
+                          <th className="p-2.5">Scenario / Challenge</th>
+                          <th className="p-2.5">Automated Engine State</th>
+                          <th className="p-2.5 text-emerald-400">HITL Resolution Action</th>
+                          <th className="p-2.5">Long-Term Impact</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800/60 font-sans text-slate-300">
+                        <tr className="hover:bg-slate-900/40">
+                          <td className="p-2.5 font-semibold text-slate-200 font-mono">Repeated Unknown Alias</td>
+                          <td className="p-2.5 text-slate-400">Flagged as &quot;Needs Review&quot; across 350 customer invoices.</td>
+                          <td className="p-2.5 text-emerald-300 font-medium">Steward maps alias once and clicks <strong>&quot;Apply to All Similar&quot;</strong>.</td>
+                          <td className="p-2.5 text-slate-400 font-mono text-[10px]">Decision cached in Semantic Cache; future batches auto-map.</td>
+                        </tr>
+                        <tr className="hover:bg-slate-900/40">
+                          <td className="p-2.5 font-semibold text-slate-200 font-mono">Malformed Payload / Bad Date</td>
+                          <td className="p-2.5 text-amber-400">Flagged as &quot;Blocked Exception&quot; (e.g. 2026/13/45).</td>
+                          <td className="p-2.5 text-blue-300 font-medium">Inline edit to correct date directly in the grid, or send to <strong>Dead-Letter Queue (DLQ)</strong>.</td>
+                          <td className="p-2.5 text-slate-400 font-mono text-[10px]">Remaining 1,499 records execute atomically without failing the pipeline.</td>
+                        </tr>
+                        <tr className="hover:bg-slate-900/40">
+                          <td className="p-2.5 font-semibold text-slate-200 font-mono">Regulatory / SOC2 Audit</td>
+                          <td className="p-2.5 text-slate-400">Autonomous black-box AI changes are rejected by enterprise auditors.</td>
+                          <td className="p-2.5 text-purple-300 font-medium">Steward enters Digital Sign-Off (Name, Role, Rationale) with SHA-256 seal.</td>
+                          <td className="p-2.5 text-slate-400 font-mono text-[10px]">Produces 100% compliant JSON audit report (EU AI Act Art. 14).</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Where to Access */}
+                <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
+                  <h4 className="font-bold text-slate-200 text-xs font-sans flex items-center gap-2">
+                    <Sliders className="w-4 h-4 text-emerald-400" />
+                    How to Access HITL Console in Semantra
+                  </h4>
+                  <p className="text-xs text-slate-400 leading-relaxed font-sans">
+                    1. <strong>Workspace Pipeline Step 6</strong>: Complete Step 4 (Code Output) or Step 5 (BA Report), then click <strong>6. HITL Execution</strong> in the sub-step toolbar.<br />
+                    2. <strong>Code Output Quick Launch</strong>: In Step 4 (Code Output), click the blue <strong>[ ⚡ HITL Batch Execution (Step 6) ]</strong> button in the top action bar.<br />
+                    3. <strong>Architecture Studios Sidebar</strong>: Click <strong>HITL Execution Console</strong> directly under the Architecture Studios section in the left sidebar navigation.
                   </p>
                 </div>
               </div>

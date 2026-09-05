@@ -74,7 +74,30 @@ Strukturisani 7-stepeni proces koji od nepoznatog JSON/XML payload-a kreira čis
 
 ---
 
-### 4. Bezbednost i Bounded AI principi
+### 4. Human-in-the-Loop (HITL) Execution Console (WF-15)
+
+**HITL Execution Console** predstavlja determinističku sigurnosnu branu između automatizovanog maper motora i produkcionih baza podataka / ERP sistema klijenta. Sprečava neautorizovane mutacije izolacijom graničnih slučajeva koje čovek (Data Steward) verifikuje.
+
+#### 4-stepeni tok izvršenja
+1. **Ingestija i Dry-Run simulacija**: Učitavanje batch-a (npr. 1.500+ zapisa) i simulacija transformacija u memorijskom prostoru sa **nula mutacija u produkciji**.
+2. **Staging & Exception Engine**: Automatsko prepoznavanje sigurnih mapiranja (≥ 90% konfidencija) i izolacija upozorenja, nepoznatih alijasa i kršenja šeme.
+3. **Pregled i razrešavanje izuzetaka (Human Review)**:
+   - **Fokus na izuzetke**: Prikazuje isključivo zapise kojima je potrebna ljudska pažnja.
+   - **Grupno rešavanje („Apply to All Similar”)**: Odobravanje alijasa (npr. `supplier_vat_id` → `tax_identification_number`) odmah razrešava sve identične pojave u čitavom batch-u.
+   - **Karantin (Dead-Letter Queue / DLQ)**: Kritične greške (npr. pogrešan format datuma ili negativni iznosi) mogu se izmeniti na licu mesta ili poslati u karantin, čime se **odblokira izvršenje preostalih ispravnih zapisa**.
+4. **Verifikovani Commit & Digitalni potpis**:
+   - Atomski upis verifikovanih zapisa u bazu.
+   - Generisanje jedinstvenog SHA-256 hash-a batch-a i beleženje digitalnog potpisa Data Steward-a (ime, uloga, obrazloženje).
+   - Izvoz kompletnog revizorskog izveštaja u `.JSON` formatu usklađenog sa **SOC2, ISO 27001 i EU AI Act (Član 14 - Ljudski nadzor)**.
+
+#### Kako pristupiti:
+- **Korak 6 u Workspace-u**: Dostupan direktno nakon koraka 5 (BA Report) kao `6. HITL Execution`.
+- **Brza akcija iz Code Output-a**: Klikom na `[ ⚡ HITL Batch Execution ]` u zaglavlju generisanog koda (`WorkspaceOutput`).
+- **Sidebar Architecture Studios**: Izborom stavke `HITL Execution Console` u bočnom meniju.
+
+---
+
+### 5. Bezbednost i Bounded AI principi
 
 - **Ograničeni AI (Bounded AI)**: Generativni AI (Google Gemini 2.5) služi isključivo kao savetodavni asistent (objašnjenja, predlozi optimizacije i sinteza arhitekture). Sve odluke i mapiranja ostaju deterministički i pod kontrolom analitičara.
 - **Automatsko PII maskiranje**: Pre bilo kakvog slanja podataka ka AI modelima, osetljivi podaci (imena, adrese, kreditne kartice, tokeni, JMBG) se automatski detektuju i maskiraju na klijentskom sloju.

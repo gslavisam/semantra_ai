@@ -127,6 +127,18 @@ export interface CanonicalConcept {
   activeOverlay?: string;
 }
 
+export interface OverlayRule {
+  id: string;
+  source_system: string;
+  source_field: string;
+  target_canonical_concept: string;
+  override_type: 'alias_promotion' | 'domain_override' | 'pii_tag' | 'type_mapping';
+  steward: string;
+  status: 'active' | 'inactive';
+  created_at: string;
+  notes: string;
+}
+
 export interface CorrectionRule {
   id: string;
   sourcePattern: string;
@@ -136,11 +148,13 @@ export interface CorrectionRule {
   matchCount: number;
 }
 
-export type AIProvider = 'gemini' | 'openai' | 'lmstudio' | 'ollama' | 'custom';
+export type LocalAIEngine = 'ollama' | 'lmstudio';
+export type AIProvider = 'gemini' | 'openai' | 'anthropic' | 'local' | 'custom' | 'lmstudio' | 'ollama';
 
 export interface AIModelConfig {
   provider: AIProvider;
   modelName: string;
+  localEngine?: LocalAIEngine;
   apiKey?: string;
   baseUrl?: string;
   temperature: number;

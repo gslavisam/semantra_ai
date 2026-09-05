@@ -16,6 +16,7 @@ import { JsonSchemaCoercionStudio } from './components/JsonSchemaCoercionStudio'
 import { EntityResolutionStudio } from './components/EntityResolutionStudio';
 import { TransactionalOutboxStudio } from './components/TransactionalOutboxStudio';
 import { MultiProtocolTranslationStudio } from './components/MultiProtocolTranslationStudio';
+import { HumanInTheLoopExecutionConsole } from './components/HumanInTheLoopExecutionConsole';
 
 import { 
   MappingRow, 
@@ -55,7 +56,8 @@ import {
   AlertCircle,
   Bot,
   RotateCcw,
-  Network
+  Network,
+  ShieldCheck
 } from 'lucide-react';
 
 
@@ -241,13 +243,24 @@ export default function App() {
       const saved = localStorage.getItem('semantra_ai_config_v2');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed.modelName === 'gemini-3.6-flash') parsed.modelName = 'gemini-3.7-flash';
+        if (parsed.modelName === 'gemini-3.6-flash' || parsed.modelName === 'gemini-3.7-flash') parsed.modelName = 'gemini-3.8-flash';
+        if (parsed.provider === 'lmstudio') {
+          parsed.provider = 'local';
+          parsed.localEngine = 'lmstudio';
+        } else if (parsed.provider === 'ollama') {
+          parsed.provider = 'local';
+          parsed.localEngine = 'ollama';
+        }
+        if (parsed.provider === 'local' && !parsed.localEngine) {
+          parsed.localEngine = 'ollama';
+        }
         return parsed;
       }
     } catch {}
     return {
       provider: 'gemini',
-      modelName: 'gemini-3.7-flash',
+      modelName: 'gemini-3.8-flash',
+      localEngine: 'ollama',
       temperature: 0.2,
       topP: 0.95,
       enableGuardrails: true,
@@ -774,7 +787,8 @@ export default function App() {
                         { id: 'review', label: '2. Trust Review', icon: Eye, enabled: mappings.length > 0 },
                         { id: 'decisions', label: '3. Active Decisions', icon: Sliders, enabled: mappings.length > 0 },
                         { id: 'output', label: '4. Code Output', icon: FileCode2, enabled: mappings.length > 0 },
-                        { id: 'ba_report', label: '5. BA Report', icon: FileText, enabled: mappings.length > 0 }
+                        { id: 'ba_report', label: '5. BA Report', icon: FileText, enabled: mappings.length > 0 },
+                        { id: 'execution', label: '6. HITL Execution', icon: ShieldCheck, enabled: mappings.length > 0 }
                       ].map((step) => {
                         const Icon = step.icon;
                         const isCurrent = workspaceStep === step.id;
@@ -888,6 +902,7 @@ export default function App() {
                     selectedPreset={selectedPreset} 
                     onPublishToCatalog={handlePublishToCatalog}
                     onUpdateMappings={setMappings}
+                    onNavigateToHITL={() => setWorkspaceStep('execution')}
                     enterpriseFeatures={enterpriseFeatures}
                   />
                 )}
@@ -897,6 +912,13 @@ export default function App() {
                     selectedPreset={selectedPreset} 
                     aiConfig={aiConfig}
                     enterpriseFeatures={enterpriseFeatures}
+                  />
+                )}
+                {workspaceStep === 'execution' && (
+                  <HumanInTheLoopExecutionConsole 
+                    activeMappings={mappings} 
+                    selectedPreset={selectedPreset} 
+                    onReturnToWorkspace={() => setWorkspaceStep('output')}
                   />
                 )}
               </>
@@ -956,6 +978,15 @@ export default function App() {
             setAiConfig={setAiConfig}
             enterpriseFeatures={enterpriseFeatures}
             setEnterpriseFeatures={setEnterpriseFeatures}
+          />
+        );
+
+      case 'hitl_execution':
+        return (
+          <HumanInTheLoopExecutionConsole 
+            activeMappings={mappings} 
+            selectedPreset={selectedPreset} 
+            onReturnToWorkspace={() => { setActiveTab('workspace'); setWorkspaceStep('review'); }}
           />
         );
 

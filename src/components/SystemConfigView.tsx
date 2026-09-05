@@ -70,32 +70,53 @@ interface SystemConfigViewProps {
   setEnterpriseFeatures?: React.Dispatch<React.SetStateAction<EnterpriseFeaturesConfig>>;
 }
 
-const PROVIDER_MODEL_PRESETS: Record<AIProvider, { id: string; name: string; desc: string }[]> = {
+const PROVIDER_MODEL_PRESETS: Record<string, { id: string; name: string; desc: string }[]> = {
   gemini: [
-    { id: 'gemini-3.7-flash', name: 'Gemini 3.7 Flash (Default)', desc: 'Ultra-fast, highly accurate for structured mapping, reasoning & closed-set validation' },
-    { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', desc: 'Deep reasoning & advanced code generation for intricate SQL/PySpark pipelines' },
-    { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', desc: 'Minimal latency for high-throughput bulk field matching' }
+    { id: 'gemini-3.8-flash', name: 'Gemini 3.8 Flash (Default)', desc: 'Next-gen ultra-fast, highly accurate for structured mapping, reasoning & closed-set validation' },
+    { id: 'gemini-3.7-flash', name: 'Gemini 3.7 Flash', desc: 'Fast, high-fidelity structured mapping & closed-set validation' },
+    { id: 'gemini-3.1-pro', name: 'Gemini 3.1 Pro', desc: 'Deep reasoning & advanced code generation for intricate SQL/PySpark pipelines' },
+    { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', desc: 'Enterprise frontier reasoning & reverse engineering synthesis' }
   ],
   openai: [
-    { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol (Default)', desc: 'Absolute flagship for complex workloads, heavy schema coding, and deep reasoning' },
-    { id: 'gpt-5.6-terra', name: 'GPT-5.6 Terra', desc: 'Balanced mid-tier with strong capabilities at heavily reduced latency' },
-    { id: 'gpt-5.6-luna', name: 'GPT-5.6 Luna', desc: 'Optimized for broad field categorization and rapid metadata matching' },
-    { id: 'gpt-5.4-nano', name: 'GPT-5.4 Nano', desc: 'Fastest entry & most affordable option for lightweight validation' }
+    { id: 'gpt-6-astra', name: 'GPT-6 Astra (Default)', desc: '2026 flagship for deep reasoning, autonomous schema coding & complex mappings' },
+    { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', desc: 'High-throughput frontier model for intricate enterprise schemas and dbt generation' },
+    { id: 'gpt-5.5-instant', name: 'GPT-5.5 Instant', desc: 'Low-latency balanced model for rapid field matching' },
+    { id: 'o4-mini', name: 'OpenAI o4-mini', desc: 'Specialized reasoning model for mathematical & logical schema type inference' },
+    { id: 'o3-mini', name: 'OpenAI o3-mini', desc: 'Logic and type constraint reasoning' }
+  ],
+  anthropic: [
+    { id: 'claude-sonnet-5', name: 'Claude Sonnet 5 (Default)', desc: 'Frontier reasoning and industry-standard coding for schema translation & dbt' },
+    { id: 'claude-opus-5', name: 'Claude Opus 5', desc: 'Maximum intelligence for complex 3-way merge conflict resolution & canonical governance' },
+    { id: 'claude-haiku-4.5', name: 'Claude Haiku 4.5', desc: 'Fast, cost-efficient model for rapid field categorization and PII detection' }
+  ],
+  local: [
+    { id: 'deepseek-v4-flash', name: 'DeepSeek V4 Flash (Default)', desc: '2026 MoE open weights with 1M context for private on-prem schema mapping' },
+    { id: 'deepseek-r1:latest', name: 'DeepSeek R1', desc: 'Reasoning-focused open weights model for deductive matching' },
+    { id: 'llama-4-scout', name: 'Llama 4 Scout', desc: 'Meta 4th-gen MoE architecture for efficient on-prem inference' },
+    { id: 'qwen3.8-27b', name: 'Qwen 3.8 27B', desc: 'Premier open coding model for ETL, SQL, and schema transformations' },
+    { id: 'qwen2.5-coder:14b', name: 'Qwen 2.5 Coder 14B', desc: 'Specialized code generation & schema mapping' },
+    { id: 'gemma-4', name: 'Gemma 4', desc: 'Google open weights model for local deployment' },
+    { id: 'llama-3.2-3b', name: 'Llama 3.2 3B', desc: 'Ultra-lightweight local endpoint' },
+    { id: 'custom-local', name: 'Custom Loaded Model', desc: 'Any model currently loaded in local server instance' }
   ],
   lmstudio: [
-    { id: 'gemma-4', name: 'Gemma 4 (Google Open Weights)', desc: 'Gemma 4 model running locally in LM Studio' },
-    { id: 'llama-3.2-3b-instruct', name: 'Llama 3.2 3B Instruct', desc: 'Local LM Studio endpoint (http://localhost:1234/v1)' },
-    { id: 'mistral-7b-instruct-v0.3', name: 'Mistral 7B Instruct', desc: 'Local high-performance open weights' },
-    { id: 'custom-local', name: 'Custom Loaded Model in LM Studio', desc: 'Any model currently loaded in local LM Studio server' }
+    { id: 'deepseek-v4-flash', name: 'DeepSeek V4 Flash (Default)', desc: '2026 MoE open weights with 1M context for private on-prem schema mapping' },
+    { id: 'llama-4-scout', name: 'Llama 4 Scout', desc: 'Meta 4th-gen MoE architecture for efficient on-prem inference' },
+    { id: 'qwen3.8-27b', name: 'Qwen 3.8 27B', desc: 'Premier open coding model for ETL, SQL, and schema transformations' },
+    { id: 'gemma-4', name: 'Gemma 4', desc: 'Google open weights model for local deployment' },
+    { id: 'llama-3.2-3b', name: 'Llama 3.2 3B', desc: 'Ultra-lightweight local endpoint' },
+    { id: 'custom-local', name: 'Custom Loaded Model', desc: 'Any model currently loaded in local server instance' }
   ],
   ollama: [
-    { id: 'gemma4:latest', name: 'Gemma 4 (Ollama)', desc: 'Gemma 4 model served locally via Ollama' },
-    { id: 'llama3.2:latest', name: 'Llama 3.2 (Ollama)', desc: 'Local Ollama endpoint (http://localhost:11434/v1)' },
-    { id: 'deepseek-r1:7b', name: 'DeepSeek R1 7B', desc: 'Reasoning-focused open weights model' },
-    { id: 'qwen2.5-coder:14b', name: 'Qwen 2.5 Coder 14B', desc: 'Specialized code generation & schema mapping' }
+    { id: 'deepseek-v4-flash', name: 'DeepSeek V4 Flash (Default)', desc: '2026 MoE open weights with 1M context for private on-prem schema mapping' },
+    { id: 'deepseek-r1:latest', name: 'DeepSeek R1', desc: 'Reasoning-focused open weights model for deductive matching' },
+    { id: 'llama-4-scout', name: 'Llama 4 Scout', desc: 'Meta 4th-gen MoE architecture for efficient on-prem inference' },
+    { id: 'qwen3.8-27b', name: 'Qwen 3.8 27B', desc: 'Premier open coding model for ETL, SQL, and schema transformations' },
+    { id: 'gemma-4', name: 'Gemma 4', desc: 'Google open weights model for local deployment' },
+    { id: 'custom-local', name: 'Custom Loaded Model', desc: 'Any model currently loaded in local server instance' }
   ],
   custom: [
-    { id: 'custom-api-model', name: 'Custom OpenAI-Compatible API', desc: 'Custom enterprise proxy or hosted LLM gateway' }
+    { id: 'custom-api-model', name: 'Custom OpenAI-Compatible API (Default)', desc: 'Custom enterprise proxy, vLLM, LiteLLM, Azure OpenAI or Bedrock gateway' }
   ]
 };
 
@@ -150,13 +171,13 @@ const OPENAPI_ENDPOINTS: OpenAPIEndpoint[] = [
     summary: 'Bounded LLM Candidate Validation',
     description: 'Submits closed candidate pairs to the configured AI model (Gemini / OpenAI / Ollama) with JSON guardrails.',
     requestBodySample: {
-      modelConfig: { provider: "gemini", modelName: "gemini-3.7-flash" },
+      modelConfig: { provider: "gemini", modelName: "gemini-3.8-flash" },
       candidatePairs: [
         { source: "KUNNR", target: "customer_id", sourceDesc: "Customer Number" }
       ]
     },
     responseSample: {
-      modelUsed: "gemini-3.7-flash",
+      modelUsed: "gemini-3.8-flash",
       validatedResults: [
         {
           sourceField: "KUNNR",
@@ -230,7 +251,7 @@ const OPENAPI_ENDPOINTS: OpenAPIEndpoint[] = [
       activeOverlay: "sap_best_plus_weak_promotion_overlay.csv",
       loadedConcepts: 18,
       aiProviderStatus: "connected",
-      aiActiveModel: "gemini-3.7-flash",
+      aiActiveModel: "gemini-3.8-flash",
       port: 3000
     }
   }
@@ -779,18 +800,38 @@ export const SystemConfigView: React.FC<SystemConfigViewProps> = ({
 
   // Handle provider selection update
   const handleProviderChange = (provider: AIProvider) => {
-    const presets = PROVIDER_MODEL_PRESETS[provider];
+    const key = (provider === 'lmstudio' || provider === 'ollama') ? 'local' : provider;
+    const presets = PROVIDER_MODEL_PRESETS[key] || PROVIDER_MODEL_PRESETS['local'];
     const defaultModel = presets[0]?.id || 'custom-model';
     let defaultBaseUrl = '';
-    if (provider === 'lmstudio') defaultBaseUrl = 'http://localhost:1234/v1';
-    if (provider === 'ollama') defaultBaseUrl = 'http://localhost:11434/v1';
+    let localEngine = aiConfig.localEngine || 'ollama';
+
+    if (provider === 'local') {
+      defaultBaseUrl = localEngine === 'lmstudio' ? 'http://localhost:1234/v1' : 'http://localhost:11434/v1';
+    } else if (provider === 'lmstudio') {
+      defaultBaseUrl = 'http://localhost:1234/v1';
+      localEngine = 'lmstudio';
+    } else if (provider === 'ollama') {
+      defaultBaseUrl = 'http://localhost:11434/v1';
+      localEngine = 'ollama';
+    }
 
     setAiConfig(prev => ({
       ...prev,
       provider,
+      localEngine,
       modelName: defaultModel,
       baseUrl: defaultBaseUrl,
       isCustomModel: provider === 'custom'
+    }));
+  };
+
+  const handleLocalEngineChange = (engine: 'ollama' | 'lmstudio') => {
+    const defaultBaseUrl = engine === 'lmstudio' ? 'http://localhost:1234/v1' : 'http://localhost:11434/v1';
+    setAiConfig(prev => ({
+      ...prev,
+      localEngine: engine,
+      baseUrl: defaultBaseUrl
     }));
   };
 
@@ -1138,18 +1179,18 @@ paths:
                 {[
                   { id: 'gemini', name: 'Google Gemini', badge: 'Default' },
                   { id: 'openai', name: 'OpenAI API', badge: 'Cloud' },
-                  { id: 'lmstudio', name: 'LM Studio', badge: 'Local' },
-                  { id: 'ollama', name: 'Ollama', badge: 'Local' },
+                  { id: 'anthropic', name: 'Anthropic Claude', badge: 'Cloud' },
+                  { id: 'local', name: 'Local AI', badge: 'On-Prem' },
                   { id: 'custom', name: 'Custom API', badge: 'Gateway' }
                 ].map((p) => {
-                  const isSelected = aiConfig.provider === p.id;
+                  const isSelected = aiConfig.provider === p.id || (p.id === 'local' && (aiConfig.provider === 'lmstudio' || aiConfig.provider === 'ollama'));
                   return (
                     <button
                       key={p.id}
                       onClick={() => handleProviderChange(p.id as AIProvider)}
                       className={`p-3 rounded-xl border text-left flex flex-col justify-between transition-all ${
                         isSelected 
-                          ? 'border-indigo-600 bg-indigo-50/40 text-slate-900 ring-1 ring-indigo-500' 
+                          ? 'border-indigo-600 bg-indigo-50/40 text-slate-900 ring-1 ring-indigo-500 shadow-xs' 
                           : 'border-slate-200 bg-slate-50/30 text-slate-600 hover:border-slate-300 hover:bg-white'
                       }`}
                     >
@@ -1163,6 +1204,56 @@ paths:
                 })}
               </div>
 
+              {/* Local AI Engine Selector (Ollama vs LM Studio) */}
+              {(aiConfig.provider === 'local' || aiConfig.provider === 'lmstudio' || aiConfig.provider === 'ollama') && (
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-slate-700 font-sans flex items-center gap-1.5">
+                      <Terminal className="w-3.5 h-3.5 text-indigo-500" />
+                      Local Inference Engine
+                    </span>
+                    <span className="text-[11px] font-mono text-slate-500">
+                      Port: <code className="bg-white px-1.5 py-0.5 rounded border border-slate-200 text-indigo-600 font-semibold">{aiConfig.localEngine === 'lmstudio' || aiConfig.provider === 'lmstudio' ? '1234 (LM Studio)' : '11434 (Ollama)'}</code>
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => handleLocalEngineChange('ollama')}
+                      className={`px-3 py-2.5 rounded-lg border text-xs font-mono font-medium flex items-center justify-between transition-all ${
+                        (aiConfig.localEngine || 'ollama') === 'ollama' && aiConfig.provider !== 'lmstudio'
+                          ? 'bg-white border-indigo-600 text-indigo-700 ring-1 ring-indigo-500 shadow-xs'
+                          : 'bg-slate-100/70 border-slate-200 text-slate-600 hover:bg-white'
+                      }`}
+                    >
+                      <span className="flex items-center gap-2">
+                        <span className="text-base">🦙</span>
+                        <span className="font-semibold">Ollama</span>
+                        <span className="text-[10px] text-slate-400 font-normal">(localhost:11434)</span>
+                      </span>
+                      {((aiConfig.localEngine || 'ollama') === 'ollama' && aiConfig.provider !== 'lmstudio') && <Check className="w-3.5 h-3.5 text-indigo-600" />}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleLocalEngineChange('lmstudio')}
+                      className={`px-3 py-2.5 rounded-lg border text-xs font-mono font-medium flex items-center justify-between transition-all ${
+                        aiConfig.localEngine === 'lmstudio' || aiConfig.provider === 'lmstudio'
+                          ? 'bg-white border-indigo-600 text-indigo-700 ring-1 ring-indigo-500 shadow-xs'
+                          : 'bg-slate-100/70 border-slate-200 text-slate-600 hover:bg-white'
+                      }`}
+                    >
+                      <span className="flex items-center gap-2">
+                        <span className="text-base">🧪</span>
+                        <span className="font-semibold">LM Studio</span>
+                        <span className="text-[10px] text-slate-400 font-normal">(localhost:1234)</span>
+                      </span>
+                      {(aiConfig.localEngine === 'lmstudio' || aiConfig.provider === 'lmstudio') && <Check className="w-3.5 h-3.5 text-indigo-600" />}
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Model Choice Dropdown / Input */}
               <div className="space-y-4 pt-2">
                 <div className="space-y-1.5">
@@ -1175,7 +1266,7 @@ paths:
                       onChange={(e) => setAiConfig(prev => ({ ...prev, modelName: e.target.value }))}
                       className="w-full text-xs font-mono border border-slate-200 rounded-lg p-2.5 bg-white text-slate-800 focus:ring-1 focus:ring-indigo-500"
                     >
-                      {PROVIDER_MODEL_PRESETS[aiConfig.provider].map((m) => (
+                      {(PROVIDER_MODEL_PRESETS[aiConfig.provider] || (aiConfig.provider === 'local' ? PROVIDER_MODEL_PRESETS['local'] : PROVIDER_MODEL_PRESETS['gemini']) || []).map((m) => (
                         <option key={m.id} value={m.id}>
                           {m.name}
                         </option>
@@ -1191,31 +1282,37 @@ paths:
                     />
                   </div>
                   <p className="text-[11px] text-slate-400 font-sans">
-                    Current preset: {PROVIDER_MODEL_PRESETS[aiConfig.provider].find(m => m.id === aiConfig.modelName)?.desc || 'Custom user model descriptor.'}
+                    Current preset: {(PROVIDER_MODEL_PRESETS[aiConfig.provider] || PROVIDER_MODEL_PRESETS['local'] || []).find(m => m.id === aiConfig.modelName)?.desc || 'Custom user model descriptor.'}
                   </p>
                 </div>
 
                 {/* Base URL for Local / Custom Endpoints */}
-                {(aiConfig.provider === 'lmstudio' || aiConfig.provider === 'ollama' || aiConfig.provider === 'custom') && (
+                {(aiConfig.provider === 'local' || aiConfig.provider === 'lmstudio' || aiConfig.provider === 'ollama' || aiConfig.provider === 'custom') && (
                   <div className="space-y-1.5 bg-slate-50 p-3 rounded-lg border border-slate-200">
                     <label className="text-xs font-semibold text-slate-700 font-sans flex items-center gap-1.5">
                       <Terminal className="w-3.5 h-3.5 text-slate-500" />
-                      Local Server Base URL
+                      {aiConfig.provider === 'custom' ? 'Custom Endpoint Base URL' : 'Local Server Base URL'}
                     </label>
                     <input
                       type="text"
                       value={aiConfig.baseUrl || ''}
                       onChange={(e) => setAiConfig(prev => ({ ...prev, baseUrl: e.target.value }))}
-                      placeholder={aiConfig.provider === 'ollama' ? 'http://localhost:11434/v1' : 'http://localhost:1234/v1'}
+                      placeholder={
+                        aiConfig.provider === 'custom'
+                          ? 'https://your-api-gateway.internal/v1'
+                          : (aiConfig.localEngine === 'lmstudio' || aiConfig.provider === 'lmstudio' ? 'http://localhost:1234/v1' : 'http://localhost:11434/v1')
+                      }
                       className="w-full text-xs font-mono border border-slate-200 rounded-lg p-2 bg-white text-slate-800"
                     />
                     <p className="text-[10px] text-slate-400">
-                      Ensure your local server is running with CORS enabled (e.g. `ollama serve` or LM Studio local server on port 1234).
+                      {aiConfig.provider === 'custom'
+                        ? 'Ensure endpoint is compatible with OpenAI v1 schema and accessible from your network.'
+                        : 'Ensure your local server is running with CORS enabled (e.g. `ollama serve` or LM Studio local server on port 1234).'}
                     </p>
                   </div>
                 )}
 
-                {/* API Key input if applicable */}
+                {/* OpenAI API Key input */}
                 {aiConfig.provider === 'openai' && (
                   <div className="space-y-1.5 bg-slate-50 p-3 rounded-lg border border-slate-200">
                     <label className="text-xs font-semibold text-slate-700 font-sans flex items-center gap-1.5">
@@ -1227,6 +1324,40 @@ paths:
                       value={aiConfig.apiKey || ''}
                       onChange={(e) => setAiConfig(prev => ({ ...prev, apiKey: e.target.value }))}
                       placeholder="sk-..."
+                      className="w-full text-xs font-mono border border-slate-200 rounded-lg p-2 bg-white text-slate-800"
+                    />
+                  </div>
+                )}
+
+                {/* Anthropic Claude API Key input */}
+                {aiConfig.provider === 'anthropic' && (
+                  <div className="space-y-1.5 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                    <label className="text-xs font-semibold text-slate-700 font-sans flex items-center gap-1.5">
+                      <Key className="w-3.5 h-3.5 text-slate-500" />
+                      Anthropic API Secret Key
+                    </label>
+                    <input
+                      type="password"
+                      value={aiConfig.apiKey || ''}
+                      onChange={(e) => setAiConfig(prev => ({ ...prev, apiKey: e.target.value }))}
+                      placeholder="sk-ant-..."
+                      className="w-full text-xs font-mono border border-slate-200 rounded-lg p-2 bg-white text-slate-800"
+                    />
+                  </div>
+                )}
+
+                {/* Custom API Key input (Optional) */}
+                {aiConfig.provider === 'custom' && (
+                  <div className="space-y-1.5 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                    <label className="text-xs font-semibold text-slate-700 font-sans flex items-center gap-1.5">
+                      <Key className="w-3.5 h-3.5 text-slate-500" />
+                      Gateway Secret Key / Token (Optional)
+                    </label>
+                    <input
+                      type="password"
+                      value={aiConfig.apiKey || ''}
+                      onChange={(e) => setAiConfig(prev => ({ ...prev, apiKey: e.target.value }))}
+                      placeholder="Bearer token or API key..."
                       className="w-full text-xs font-mono border border-slate-200 rounded-lg p-2 bg-white text-slate-800"
                     />
                   </div>

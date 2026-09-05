@@ -31,7 +31,7 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ 
   activeTab, 
   setActiveTab, 
-  activeModelName = 'gemini-3.7-flash', 
+  activeModelName = 'gemini-3.8-flash', 
   onOpenHelp,
   mappingCount = 5,
   lowConfidenceCount = 1,
@@ -48,6 +48,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   ];
 
   const enterpriseLabItems = [
+    { id: 'hitl_execution', label: 'HITL Execution Console', icon: ShieldCheck, description: 'Dry-Run & Exception Gate' },
     { id: 'schema_drift', label: 'Schema Drift Studio', icon: GitBranch, description: 'Dynamic JSONB & DLQ' },
     { id: 'type_coercion', label: 'Type Coercion Studio', icon: FileCheck, description: 'Strict ISO & Numeric Casting' },
     { id: 'entity_resolution', label: 'Entity Resolution', icon: Users, description: 'Golden Records & Fuzzy Dedup' },

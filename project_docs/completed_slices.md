@@ -5,6 +5,22 @@ Ovaj dokument je strogo hronološki ledger isporučenih slice-ova i završenih t
 Za današnje stanje proizvoda koristi `current_state.md`.
 Za plan i backlog koristi `plan.md` i `epics.md`.
 
+## 2026-06-02
+
+### Human-in-the-Loop (HITL) Execution Console (WF-15) & Documentation Synchronization
+
+Isporučeno:
+
+- **HumanInTheLoopExecutionConsole (WF-15)**: Implementiran 4-stepeni deterministički execution pipeline (*1. Ingest & Dry-Run Simulation*, *2. Staging & Exception Engine*, *3. Human Review & Triage*, *4. Verified Commit & Audit Sign-off*).
+- **Zero Unintended Mutations**: Uveden je memorijski dry-run prostor sa nula mutacija u produkciji do eksplicitnog digitalnog potpisa Data Steward-a sa SHA-256 hash-om batch-a i revizorskim izvozom usklađenim sa SOC2, ISO 27001 i EU AI Act (Član 14).
+- **Incident Resolution Controls**: Implementirana brza grupna akcija *"Apply to All Similar"* za ponavljajuće nepoznate alijase i *Dead-Letter Queue (DLQ)* / karantin za malformirane zapise koji omogućava odblokirano izvršenje preostalih ispravnih transakcija.
+- **Workflow Pipeline integracija**: Konzola je integrisana kao *Korak 6 (HITL Execution)* u primarnom `WorkspacePipeline`, dodato je dugme za brzi prelazak u zaglavlju generisanog koda (`WorkspaceOutput`), kao i stavka pod *Architecture Studios* u bočnoj navigaciji (`Sidebar`).
+- **Sveobuhvatno usklađivanje dokumentacije**: Ažurirani `help.en.md`, `help.md`, `HelpModal.tsx` (nova sekcija 14 sa karticama i matricom scenarija), `README.md`, `current_state.md` i `PROJECT_OVERVIEW.md` kako bi u potpunosti odražavali sve implementirane studije i funkcionalnosti.
+
+Ishod:
+
+- Semantra sada ima operativnu sigurnosnu branu (air-gap) između automatizovanog maper motora i produkcionih baza podataka klijenata, a sva interna i eksterna dokumentacija je u 100% sinhronizovanom stanju.
+
 ## 2026-06-01
 
 ### Operational hardening: minimal sync backpressure boundary for long mapping and bounded LLM routes

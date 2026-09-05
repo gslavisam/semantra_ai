@@ -1,18 +1,21 @@
 # Semantra Current State
 
-As of 2026-06-01, Semantra is a pilot-ready semantic integration workbench built around a FastAPI backend, a Streamlit product UI, and a SQLite persistence layer. It already supports end-to-end analyst workflows from upload and schema profiling through mapping review, transformation authoring, guided explanation, governed artifact persistence, canonical knowledge management, benchmark evaluation, reuse discovery, and a first pilot RBAC slice for selected mapping-governance surfaces. It is not yet a production-grade execution platform with persistent background workers, release packaging, or a DB-only canonical authoring model.
+As of 2026-06-01 (updated with HITL and Architecture Studios), Semantra is a pilot-ready semantic integration workbench combining a modern React + TypeScript single-page application workbench, a FastAPI backend, a Streamlit product UI, and a SQLite persistence layer. It supports end-to-end analyst workflows from upload and schema profiling through mapping review, transformation authoring, guided explanation, governed artifact persistence, canonical knowledge management, benchmark evaluation, reuse discovery, human-in-the-loop (HITL) verified batch execution, and specialized enterprise architecture studios.
 
 ## Product Posture
 
 What Semantra is today:
 
-- an analyst-guided mapping and review tool for source-to-target and source-to-canonical workflows
+- an analyst-guided mapping and review tool for source-to-target and source-to-canonical workflows (Mode 1)
+- an end-to-end Contract Reverse Engineering engine for legacy JSON/XML payloads and middleware contracts (Mode 2)
+- a 4-stage Human-in-the-Loop (HITL) Execution Console providing a deterministic dry-run air-gap before production commits
 - a governed workspace for saving, reviewing, reusing, and auditing mapping artifacts
 - a canonical and overlay management console for semantic stewardship
 - a searchable catalog of approved integration knowledge and concept reuse
 - a benchmark and regression surface for measuring mapping quality changes
+- specialized Architecture Studios for Schema Drift, Type Coercion, Entity Resolution, Transactional Outbox, and Multi-Protocol translation
 - a deterministic-first product with bounded AI assistance rather than autonomous mapping
-- a complementary agentic SDK surface in `semantra_agent/` for scripted and agent-driven use cases, documented separately from the Streamlit product UI
+- a complementary agentic SDK surface in `semantra_agent/` for scripted and agent-driven use cases, documented separately from the product UI
 
 What Semantra is not yet:
 
@@ -449,6 +452,79 @@ Current behavior:
 Open design track:
 
 - deepen the draft/resume model deliberately (scope, conflict handling, sharing, audit) before enabling auto-resume behavior
+
+### 14. Human-in-the-Loop (HITL) Execution Console & Safety Gate (WF-15)
+
+Implemented:
+
+- 4-stage deterministic execution pipeline:
+  1. *Ingest & Dry-Run*: In-memory transformation simulation on batch payloads with zero target database mutations.
+  2. *Staging & Exception Engine*: Automated segregation of high-confidence matches (≥ 90%) from edge-case exceptions, unknown aliases, and schema violations.
+  3. *Human Review & Triage*:
+     - *Apply to All Similar*: Instant batch-wide resolution for repeated unknown aliases (e.g. `supplier_vat_id` -> `tax_identification_number`).
+     - *Dead-Letter Queue (DLQ / Quarantine)*: Inline editing of malformed fields or quarantine isolation, unblocking remaining valid records.
+  4. *Verified Commit & Sign-off*: Atomic commit to target stores, SHA-256 batch cryptographic seal, digital sign-off (Name, Role, Rationale), and exportable audit log conforming to SOC2, ISO 27001, and EU AI Act (Article 14 - Human Oversight).
+- direct integration as Step 6 in the primary Workspace pipeline, accessible via top toolbar quick-action `[ ⚡ HITL Batch Execution ]` in `WorkspaceOutput` or via Sidebar Architecture Studios.
+
+Main code surfaces:
+
+- `src/components/HumanInTheLoopExecutionConsole.tsx`
+- `src/components/WorkspaceOutput.tsx`
+- `src/App.tsx`
+
+### 15. Contract Reverse Engineering (Mode 2)
+
+Implemented:
+
+- 7-step automated contract extraction pipeline from raw enterprise JSON/XML payloads into canonical definitions:
+  1. *Payload Ingestion*: Upload sample payloads or paste raw payload strings.
+  2. *Structural Flattening & Path Resolution*: Recursive JSON/XML object tree flattening with array cardinality detection.
+  3. *Type & Semantic Inferencing*: Type detection (UUIDs, ISO dates, ISO currency, geo-coords).
+  4. *Canonical Concept Alignment*: Automatic alignment against Semantra's canonical glossary.
+  5. *Transformation Heuristics*: Rule extraction for date conversions, currency normalization, and composite string splitting.
+  6. *Open Data Contract (ODCS v3.0.1) Generation*: Exportable YAML/JSON schema contract.
+  7. *Handoff to Mode 1 Workspace*: One-click conversion into active Workspace mapping rows.
+
+Main code surfaces:
+
+- `src/components/ContractReverseEngineeringView.tsx`
+- `src/App.tsx`
+
+### 16. Enterprise Architecture Studios (P0–P2 Labs)
+
+Implemented:
+
+- **Schema Drift Studio**: Detects structural variations across payload versions, dynamically captures unexpected properties in a JSONB overflow column, and routes unparseable payloads to a Dead-Letter Queue (DLQ).
+- **Type Coercion Studio**: Strict ISO 8601 timestamp standardisation, European vs. US numeric casting (`1.234,56` vs `1,234.56`), and integer overflow protections.
+- **Entity Resolution Studio**: Cross-system customer deduplication with configurable Jaro-Winkler/Levenshtein matching, survivor rules (most recent vs. master authority), and golden record generation.
+- **Transactional Outbox Studio**: Outbox table transaction staging, simulated Debezium CDC polling, idempotent message hashing, and Kafka topic dispatching.
+- **Multi-Protocol Translation Studio**: Real-time translation between GraphQL AST queries and gRPC FieldMask specifications for zero-overhead API federation.
+- **Data Contracts (ODC) & GitOps CI/CD**: Open Data Contract Standard (ODCS v3.0.1) authoring, automated schema linting, breaking change detection, and GitOps PR preview.
+- **Import & AI Enrichment Studio**: Interactive grid schema ingestion, AI-assisted description and semantic tagging, and bulk type inferencing.
+- **Zero-Trust Security Triad**: Mutual TLS (mTLS) certificate verification, Attribute-Based Access Control (ABAC), and Cloud HSM key simulation.
+
+Main code surfaces:
+
+- `src/components/SchemaDriftStudio.tsx`
+- `src/components/JsonSchemaCoercionStudio.tsx`
+- `src/components/EntityResolutionStudio.tsx`
+- `src/components/TransactionalOutboxStudio.tsx`
+- `src/components/MultiProtocolTranslationStudio.tsx`
+- `src/components/Sidebar.tsx`
+
+### 17. Business Analyst (BA) Report & Executive Synthesis
+
+Implemented:
+
+- Workspace Step 5 dedicated to executive-ready mapping documentation.
+- Automated generation of executive summary, source-to-target attribute traceability matrix, data quality validation rules, and compliance posture.
+- Export options for printable/shareable markdown and structured reports.
+- AI-assisted synthesis with bounded model prompting and deterministic template fallbacks.
+
+Main code surfaces:
+
+- `src/components/WorkspaceBAReport.tsx`
+- `src/App.tsx`
 
 ## Enforced Governance Rules Today
 

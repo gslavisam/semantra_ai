@@ -35,7 +35,10 @@ import {
   Lock,
   FileDown,
   ArrowRight,
-  CheckCheck
+  CheckCheck,
+  Upload,
+  Download,
+  FileSpreadsheet
 } from 'lucide-react';
 import { 
   CanonicalConcept, 
@@ -43,21 +46,17 @@ import {
   KnowledgeConcept,
   BranchDefinition,
   MergeConflictItem,
-  StewardshipAuditRecord
+  StewardshipAuditRecord,
+  OverlayRule
 } from '../types';
 import { KNOWLEDGE_CONCEPTS as DEFAULT_KNOWLEDGE_CONCEPTS } from '../data/mockData';
-
-interface OverlayRule {
-  id: string;
-  source_system: string;
-  source_field: string;
-  target_canonical_concept: string;
-  override_type: 'alias_promotion' | 'domain_override' | 'pii_tag' | 'type_mapping';
-  steward: string;
-  status: 'active' | 'inactive';
-  created_at: string;
-  notes: string;
-}
+import { AddCanonicalConceptModal } from './AddCanonicalConceptModal';
+import { ImportGlossaryModal } from './ImportGlossaryModal';
+import { AddOverlayRuleModal } from './AddOverlayRuleModal';
+import { ImportOverlayModal } from './ImportOverlayModal';
+import { AddKnowledgeConceptModal } from './AddKnowledgeConceptModal';
+import { ImportKnowledgeModal } from './ImportKnowledgeModal';
+import { ImportEnrichmentStudio } from './ImportEnrichmentStudio';
 
 interface AdminViewProps {
   canonicalConcepts: CanonicalConcept[];
@@ -72,7 +71,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
   stewardshipItems,
   setStewardshipItems
 }) => {
-  const [activeSection, setActiveSection] = useState<'Canonical' | 'Knowledge' | 'Overlays & Runtime' | 'Stewardship' | 'Audit Trail'>('Canonical');
+  const [activeSection, setActiveSection] = useState<'Canonical' | 'Knowledge' | 'Overlays & Runtime' | 'Stewardship' | 'Audit Trail' | 'Import & AI Studio'>('Canonical');
   const [conceptSearch, setConceptSearch] = useState('');
   const [conceptFocus, setConceptFocus] = useState('All concepts');
   const [selectedSourceSystem, setSelectedSourceSystem] = useState('All source systems');
@@ -498,6 +497,42 @@ export const AdminView: React.FC<AdminViewProps> = ({
     document.addEventListener('mouseup', onMouseUp);
   };
 
+  // Modals state for Canonical & Overlay Authoring / Ingestion
+  const [isAddConceptModalOpen, setIsAddConceptModalOpen] = useState(false);
+  const [isImportGlossaryModalOpen, setIsImportGlossaryModalOpen] = useState(false);
+  const [isAddOverlayRuleModalOpen, setIsAddOverlayRuleModalOpen] = useState(false);
+  const [isImportOverlayModalOpen, setIsImportOverlayModalOpen] = useState(false);
+  const [isAddKnowledgeModalOpen, setIsAddKnowledgeModalOpen] = useState(false);
+  const [isImportKnowledgeModalOpen, setIsImportKnowledgeModalOpen] = useState(false);
+  const [toastNotification, setToastNotification] = useState<{ text: string; type: 'success' | 'info' } | null>(null);
+
+  const showToast = (text: string, type: 'success' | 'info' = 'success') => {
+    setToastNotification({ text, type });
+    setTimeout(() => setToastNotification(null), 4500);
+  };
+
+  // Overlay Files Registry
+  const [overlayFilesList, setOverlayFilesList] = useState<Array<{ file: string; title: string; system: string; steward: string }>>([
+    { 
+      file: 'sap_best_plus_weak_promotion_overlay.csv', 
+      title: 'SAP SD/MM Sales & Master Overlay', 
+      system: 'SAP ECC / S4HANA',
+      steward: 'Enterprise Data Lead'
+    },
+    { 
+      file: 'hrdh_knowledge_overlay.csv', 
+      title: 'HR Data Hub & GDPR Compliance', 
+      system: 'Workday HR',
+      steward: 'HR Compliance Lead'
+    },
+    { 
+      file: 'qb_knowledge_overlay.csv', 
+      title: 'QuickBooks Accounting & Finance', 
+      system: 'QuickBooks Online',
+      steward: 'SME Accounting Team'
+    }
+  ]);
+
   // Active overlays state
   const [activeOverlayFiles, setActiveOverlayFiles] = useState<Record<string, boolean>>({
     'sap_best_plus_weak_promotion_overlay.csv': true,
@@ -534,6 +569,296 @@ export const AdminView: React.FC<AdminViewProps> = ({
       { id: 'ov_qb_4', source_system: 'QuickBooks Online', source_field: 'AccountRef_FullName', target_canonical_concept: 'account_name', override_type: 'domain_override', steward: 'Finance Lead', status: 'active', created_at: '2026-04-08', notes: 'Chart of Accounts text representation' }
     ]
   });
+
+  // Handlers for Canonical Concept authoring, CSV import, and export
+  const handleAddCanonicalConcept = (newConcept: CanonicalConcept) => {
+    setCanonicalConcepts(prev => [newConcept, ...prev]);
+
+    const auditRec: StewardshipAuditRecord = {
+      id: `audit_add_${Date.now()}`,
+      timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19),
+      stewardName: 'Lead Steward (You)',
+      actionType: 'concept_added' as any,
+      branchName: activeBranch,
+      targetEntity: `${newConcept.entity}.${newConcept.attribute}`,
+      details: `Created new canonical concept "${newConcept.concept_id}" (${newConcept.display_name}) with aliases [${newConcept.base_aliases || 'none'}]`,
+      idempotencyKey: `IDEMP-CONCEPT-${Date.now()}`,
+      commitHash: Math.random().toString(36).substring(2, 9),
+      status: 'committed'
+    };
+    setAuditLogs(prev => [auditRec, ...prev]);
+    showToast(`Successfully added concept "${newConcept.concept_id}" to Canonical Catalog.`);
+  };
+
+  const handleImportCanonicalGlossary = (importedConcepts: CanonicalConcept[], mergeAliases: boolean) => {
+    let addedCount = 0;
+    let augmentedCount = 0;
+
+    setCanonicalConcepts(prev => {
+      const existingMap = new Map(prev.map(c => [c.concept_id.toLowerCase(), { ...c }]));
+      importedConcepts.forEach(c => {
+        const key = c.concept_id.toLowerCase();
+        if (existingMap.has(key)) {
+          augmentedCount++;
+          if (mergeAliases) {
+            const existing = existingMap.get(key)!;
+            const existingAliases = existing.base_aliases ? existing.base_aliases.split(',').map(a => a.trim()) : [];
+            const newAliases = c.base_aliases ? c.base_aliases.split(',').map(a => a.trim()) : [];
+            const combined = Array.from(new Set([...existingAliases, ...newAliases])).filter(Boolean).join(', ');
+            existingMap.set(key, { ...existing, base_aliases: combined });
+          } else {
+            existingMap.set(key, c);
+          }
+        } else {
+          addedCount++;
+          existingMap.set(key, c);
+        }
+      });
+      return Array.from(existingMap.values());
+    });
+
+    const auditRec: StewardshipAuditRecord = {
+      id: `audit_imp_${Date.now()}`,
+      timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19),
+      stewardName: 'Lead Steward (You)',
+      actionType: 'batch_import' as any,
+      branchName: activeBranch,
+      targetEntity: 'Canonical Catalog Batch',
+      details: `Batch imported ${importedConcepts.length} concepts (${addedCount} new, ${augmentedCount} augmented with merged aliases)`,
+      idempotencyKey: `IDEMP-IMP-${Date.now()}`,
+      commitHash: Math.random().toString(36).substring(2, 9),
+      status: 'committed'
+    };
+    setAuditLogs(prev => [auditRec, ...prev]);
+    showToast(`Batch imported ${importedConcepts.length} concepts (${addedCount} new, ${augmentedCount} updated).`);
+  };
+
+  const handleExportCanonicalGlossaryCSV = () => {
+    const headers = 'concept_id,entity,attribute,display_name,description,data_type,aliases,business_domains,source_systems,is_pii,is_gdpr';
+    const rows = filteredConcepts.map(c => {
+      const escape = (val: any) => `"${String(val || '').replace(/"/g, '""')}"`;
+      return [
+        c.concept_id,
+        c.entity,
+        c.attribute,
+        escape(c.display_name || c.name),
+        escape(c.description || ''),
+        c.data_type,
+        escape(c.base_aliases || ''),
+        escape(c.business_domains || ''),
+        escape(c.source_systems || ''),
+        c.isPII ? 'true' : 'false',
+        c.isGDPR ? 'true' : 'false'
+      ].join(',');
+    });
+
+    const csvContent = [headers, ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `canonical_glossary_export_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast(`Exported ${filteredConcepts.length} canonical concepts to CSV.`);
+  };
+
+  const handleAddOverlayRule = (targetFile: string, rule: OverlayRule) => {
+    setOverlayFilesList(prev => {
+      if (!prev.some(f => f.file === targetFile)) {
+        return [...prev, {
+          file: targetFile,
+          title: targetFile.replace(/\.csv$/i, '').replace(/_/g, ' ').toUpperCase(),
+          system: rule.source_system,
+          steward: rule.steward
+        }];
+      }
+      return prev;
+    });
+
+    setOverlayRulesData(prev => ({
+      ...prev,
+      [targetFile]: [rule, ...(prev[targetFile] || [])]
+    }));
+
+    setActiveOverlayFiles(prev => ({
+      ...prev,
+      [targetFile]: true
+    }));
+
+    setInspectOverlayFile(targetFile);
+    showToast(`Added overlay rule: ${rule.source_field} → ${rule.target_canonical_concept} in ${targetFile}`);
+  };
+
+  const handleImportOverlay = (fileName: string, title: string, system: string, rules: OverlayRule[], activateInStack: boolean) => {
+    setOverlayFilesList(prev => {
+      const filtered = prev.filter(f => f.file !== fileName);
+      return [...filtered, {
+        file: fileName,
+        title,
+        system,
+        steward: rules[0]?.steward || 'Imported Steward'
+      }];
+    });
+
+    setOverlayRulesData(prev => ({
+      ...prev,
+      [fileName]: rules
+    }));
+
+    if (activateInStack) {
+      setActiveOverlayFiles(prev => ({
+        ...prev,
+        [fileName]: true
+      }));
+    }
+
+    setInspectOverlayFile(fileName);
+    showToast(`Mounted ${rules.length} overlay rules from ${fileName} into active stack.`);
+  };
+
+  const handleExportOverlayCSV = (fileName: string) => {
+    const rules = overlayRulesData[fileName] || [];
+    const headers = 'id,source_system,source_field,target_canonical_concept,override_type,steward,notes';
+    const rows = rules.map(r => {
+      const escape = (val: any) => `"${String(val || '').replace(/"/g, '""')}"`;
+      return [
+        r.id,
+        escape(r.source_system),
+        escape(r.source_field),
+        escape(r.target_canonical_concept),
+        r.override_type,
+        escape(r.steward),
+        escape(r.notes)
+      ].join(',');
+    });
+
+    const csvContent = [headers, ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', fileName.endsWith('.csv') ? fileName : `${fileName}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast(`Exported ${rules.length} rules from ${fileName}.`);
+  };
+
+  const handleAddKnowledgeConcept = (newConcept: KnowledgeConcept) => {
+    setKnowledgeList(prev => [newConcept, ...prev]);
+
+    // Record in Audit Trail
+    const auditRec: StewardshipAuditRecord = {
+      id: `audit_k_${Date.now()}`,
+      timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19),
+      stewardName: 'Lead Steward (You)',
+      actionType: 'concept_added' as any,
+      branchName: activeBranch,
+      targetEntity: `Knowledge: ${newConcept.concept_id}`,
+      details: `Created knowledge concept "${newConcept.concept_id}" (${newConcept.canonical_name}) with ${newConcept.linked_canonical_concept_count} linked canonical targets.`,
+      idempotencyKey: `IDEMP-KNOW-${newConcept.concept_id.toUpperCase()}`,
+      commitHash: Math.random().toString(36).substring(2, 9),
+      status: 'committed'
+    };
+    setAuditLogs(prev => [auditRec, ...prev]);
+
+    showToast(`Created knowledge concept "${newConcept.concept_id}".`);
+  };
+
+  const handleImportKnowledge = (importedConcepts: KnowledgeConcept[], mergeExisting: boolean) => {
+    setKnowledgeList(prev => {
+      const prevMap = new Map(prev.map(k => [k.concept_id.toLowerCase(), k]));
+
+      importedConcepts.forEach(inc => {
+        const key = inc.concept_id.toLowerCase();
+        if (prevMap.has(key)) {
+          if (mergeExisting) {
+            const existing = prevMap.get(key)!;
+            const mergedSystems = Array.from(new Set([
+              ...existing.source_systems.split(',').map(s => s.trim()),
+              ...inc.source_systems.split(',').map(s => s.trim())
+            ].filter(Boolean))).join(', ');
+
+            const mergedCanonical = Array.from(new Set([
+              ...existing.linked_canonical_concepts.split(',').map(c => c.trim()),
+              ...inc.linked_canonical_concepts.split(',').map(c => c.trim())
+            ].filter(Boolean))).join(', ');
+
+            prevMap.set(key, {
+              ...existing,
+              canonical_name: inc.canonical_name || existing.canonical_name,
+              domain: inc.domain || existing.domain,
+              source_systems: mergedSystems,
+              linked_canonical_concepts: mergedCanonical,
+              linked_canonical_concept_count: mergedCanonical ? mergedCanonical.split(',').filter(Boolean).length : 0,
+              linked_pii: inc.linked_pii === 'yes' ? 'yes' : existing.linked_pii,
+              linked_gdpr_special: inc.linked_gdpr_special === 'yes' ? 'yes' : existing.linked_gdpr_special,
+              linked_pii_tags: inc.linked_pii_tags || existing.linked_pii_tags,
+              linked_data_subjects: inc.linked_data_subjects || existing.linked_data_subjects,
+            });
+          } else {
+            prevMap.set(key, inc);
+          }
+        } else {
+          prevMap.set(key, inc);
+        }
+      });
+
+      return Array.from(prevMap.values());
+    });
+
+    const auditRec: StewardshipAuditRecord = {
+      id: `audit_kimp_${Date.now()}`,
+      timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19),
+      stewardName: 'Lead Steward (You)',
+      actionType: 'batch_imported' as any,
+      branchName: activeBranch,
+      targetEntity: 'Knowledge Registry',
+      details: `Batch imported ${importedConcepts.length} knowledge concepts from CSV.`,
+      idempotencyKey: `IDEMP-KIMP-${Date.now()}`,
+      commitHash: Math.random().toString(36).substring(2, 9),
+      status: 'committed'
+    };
+    setAuditLogs(prev => [auditRec, ...prev]);
+
+    showToast(`Successfully imported ${importedConcepts.length} knowledge concepts.`);
+  };
+
+  const handleExportKnowledgeCSV = () => {
+    const headers = 'concept_id,canonical_name,domain,source,editable,linked_pii,linked_gdpr_special,linked_pii_tags,linked_data_subjects,alias_count,field_context_count,linked_canonical_concept_count,source_systems,linked_canonical_concepts';
+    const rows = filteredKnowledge.map(k => {
+      const escape = (val: any) => `"${String(val || '').replace(/"/g, '""')}"`;
+      return [
+        escape(k.concept_id),
+        escape(k.canonical_name),
+        escape(k.domain),
+        escape(k.source),
+        k.editable,
+        k.linked_pii,
+        k.linked_gdpr_special,
+        escape(k.linked_pii_tags),
+        escape(k.linked_data_subjects),
+        k.alias_count,
+        k.field_context_count,
+        k.linked_canonical_concept_count,
+        escape(k.source_systems),
+        escape(k.linked_canonical_concepts)
+      ].join(',');
+    });
+
+    const csvContent = [headers, ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `knowledge_concepts_export_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast(`Exported ${filteredKnowledge.length} knowledge concepts to CSV.`);
+  };
   useEffect(() => {
     const fetchBackendData = async () => {
       try {
@@ -779,17 +1104,23 @@ export const AdminView: React.FC<AdminViewProps> = ({
       <div className="space-y-2 border-t border-slate-200 pt-4">
         <span className="text-[11px] font-mono text-slate-500 font-semibold block">Governance section</span>
         <div className="flex flex-wrap items-center gap-6 text-xs font-mono">
-          {(['Canonical', 'Knowledge', 'Overlays & Runtime', 'Stewardship', 'Audit Trail'] as const).map((sec) => (
+          {(['Canonical', 'Knowledge', 'Overlays & Runtime', 'Stewardship', 'Audit Trail', 'Import & AI Studio'] as const).map((sec) => (
             <label key={sec} className="flex items-center gap-2 cursor-pointer text-slate-800 hover:text-indigo-600">
               <input
                 type="radio"
                 name="governance_section"
                 checked={activeSection === sec}
                 onChange={() => setActiveSection(sec)}
-                className="w-3.5 h-3.5 text-indigo-600 focus:ring-indigo-500 border-slate-300"
+                className="w-3.5 h-3.5 text-indigo-600 focus:ring-indigo-500 border-slate-300 cursor-pointer"
               />
-              <span className={`font-semibold ${activeSection === sec ? 'text-slate-900 font-bold' : 'text-slate-600'}`}>
-                {sec}
+              <span className={`font-semibold flex items-center gap-1.5 ${activeSection === sec ? 'text-slate-900 font-bold' : 'text-slate-600'}`}>
+                {sec === 'Import & AI Studio' && <Sparkles className="w-3.5 h-3.5 text-purple-600" />}
+                <span>{sec}</span>
+                {sec === 'Import & AI Studio' && (
+                  <span className="px-1.5 py-0.2 bg-purple-100 text-purple-700 rounded text-[9px] font-mono font-bold border border-purple-200">
+                    Grid &amp; Wizard
+                  </span>
+                )}
               </span>
             </label>
           ))}
@@ -801,6 +1132,58 @@ export const AdminView: React.FC<AdminViewProps> = ({
           <p className="text-xs text-slate-500 font-mono">
             Canonical glossary stewardship with filtered/total concept counts and context coverage.
           </p>
+
+          {/* Canonical Stewardship Action Toolbar */}
+          <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-slate-900 border border-slate-800 rounded-xl shadow-sm">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <button
+                type="button"
+                onClick={() => setIsAddConceptModalOpen(true)}
+                className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 shadow-sm transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>New Canonical Concept</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsImportGlossaryModalOpen(true)}
+                className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 shadow-sm transition-colors"
+              >
+                <Upload className="w-3.5 h-3.5" />
+                <span>Import CSV Glossary</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveSection('Import & AI Studio')}
+                className="px-3.5 py-2 bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-600 hover:to-indigo-600 text-white rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 shadow-sm transition-all border border-purple-500/30"
+                title="Launch the Ingestion & AI Enrichment Studio with step-by-step guidance & interactive review grid"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                <span>AI Ingestion Studio</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleExportCanonicalGlossaryCSV}
+                className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-mono font-medium flex items-center gap-1.5 transition-colors"
+                title="Export all currently filtered canonical concepts as CSV"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Export Catalog (CSV)</span>
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2 text-[11px] font-mono">
+              <span className="px-2.5 py-1.5 bg-slate-950 text-slate-300 border border-slate-800 rounded-lg">
+                Total: <strong className="text-emerald-400">{canonicalConcepts.length}</strong> concepts
+              </span>
+              <span className="px-2.5 py-1.5 bg-slate-950 text-slate-300 border border-slate-800 rounded-lg">
+                Filtered: <strong className="text-indigo-400">{filteredConcepts.length}</strong> concepts
+              </span>
+            </div>
+          </div>
 
           {/* Refresh Button */}
           <button
@@ -1084,6 +1467,66 @@ export const AdminView: React.FC<AdminViewProps> = ({
             {isKnowledgeConceptRegistryExpanded && (
               <div className="p-5 space-y-6 bg-slate-950">
                 
+                {/* Knowledge Stewardship Action Toolbar */}
+                <div className="flex flex-wrap items-center justify-between gap-4 bg-slate-900/90 border border-slate-800/90 rounded-xl p-3.5 shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-400">
+                      <Sparkles className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-mono font-bold text-white flex items-center gap-2">
+                        <span>Knowledge Concept Catalog</span>
+                        <span className="text-[10px] text-purple-400 bg-purple-950/80 border border-purple-500/30 px-2 py-0.5 rounded font-mono">
+                          {knowledgeList.length} registered
+                        </span>
+                      </h4>
+                      <p className="text-[11px] text-slate-400 font-sans">
+                        Author new knowledge concepts, connect enterprise source systems, or batch ingest from CSV.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setIsAddKnowledgeModalOpen(true)}
+                      className="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 shadow-sm transition-colors"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>+ New Knowledge Concept</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsImportKnowledgeModalOpen(true)}
+                      className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 shadow-sm transition-colors"
+                    >
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>Import Knowledge CSV</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setActiveSection('Import & AI Studio')}
+                      className="px-3 py-1.5 bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-600 hover:to-indigo-600 text-white rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 shadow-sm transition-all border border-purple-500/30"
+                      title="Launch the Ingestion & AI Enrichment Studio with step-by-step guidance & interactive review grid"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                      <span>AI Ingestion Studio</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleExportKnowledgeCSV}
+                      className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-mono font-medium flex items-center gap-1.5 transition-colors"
+                      title="Export currently filtered knowledge concepts as CSV"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Export Knowledge (CSV)</span>
+                    </button>
+                  </div>
+                </div>
+
                 {/* Search & Filter Controls */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 font-mono text-xs">
                   <div>
@@ -1295,52 +1738,51 @@ export const AdminView: React.FC<AdminViewProps> = ({
 
           {/* Active Overlay Stack Management Panel */}
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-sm space-y-5 text-slate-200">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-4">
               <div>
                 <h3 className="text-base font-bold text-white flex items-center gap-2">
                   <Layers className="w-5 h-5 text-emerald-400" />
                   Semantic Knowledge Overlays &amp; Active Runtime Stack
                 </h3>
                 <p className="text-xs text-slate-400 font-mono mt-0.5">
-                  Activate or deactivate individual overlay files in the active runtime stack.
+                  Author non-destructive rules or mount custom CSV overlays in the active deterministic runtime stack.
                 </p>
               </div>
 
-              <div className="flex items-center gap-2 text-xs font-mono bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800">
-                <span className="text-slate-400">Active in stack:</span>
-                <span className="font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-500/30 px-2 py-0.5 rounded">
-                  {Object.values(activeOverlayFiles).filter(Boolean).length} / {Object.keys(activeOverlayFiles).length} overlay files
-                </span>
+              <div className="flex flex-wrap items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setIsAddOverlayRuleModalOpen(true)}
+                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 shadow-sm transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Overlay Rule</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsImportOverlayModalOpen(true)}
+                  className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 shadow-sm transition-colors"
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>Mount Overlay CSV</span>
+                </button>
+
+                <div className="flex items-center gap-2 text-xs font-mono bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800">
+                  <span className="text-slate-400">Active in stack:</span>
+                  <span className="font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-500/30 px-2 py-0.5 rounded">
+                    {Object.values(activeOverlayFiles).filter(Boolean).length} / {overlayFilesList.length} files
+                  </span>
+                </div>
               </div>
             </div>
 
             {/* List of Available Overlay Files with Toggles */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {[
-                { 
-                  file: 'sap_best_plus_weak_promotion_overlay.csv', 
-                  title: 'SAP SD/MM Sales & Master Overlay', 
-                  system: 'SAP ECC / S4HANA',
-                  rulesCount: overlayRulesData['sap_best_plus_weak_promotion_overlay.csv']?.length || 8,
-                  steward: 'Enterprise Data Lead'
-                },
-                { 
-                  file: 'hrdh_knowledge_overlay.csv', 
-                  title: 'HR Data Hub & GDPR Compliance', 
-                  system: 'Workday HR',
-                  rulesCount: overlayRulesData['hrdh_knowledge_overlay.csv']?.length || 5,
-                  steward: 'HR Compliance Lead'
-                },
-                { 
-                  file: 'qb_knowledge_overlay.csv', 
-                  title: 'QuickBooks Accounting & Finance', 
-                  system: 'QuickBooks Online',
-                  rulesCount: overlayRulesData['qb_knowledge_overlay.csv']?.length || 4,
-                  steward: 'SME Accounting Team'
-                }
-              ].map((ov) => {
+              {overlayFilesList.map((ov) => {
                 const isActive = activeOverlayFiles[ov.file] ?? false;
                 const isInspecting = inspectOverlayFile === ov.file;
+                const rulesCount = overlayRulesData[ov.file]?.length || 0;
 
                 return (
                   <div 
@@ -1385,7 +1827,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-400">Rules Count:</span>
-                        <strong className="text-emerald-400">{ov.rulesCount} rules</strong>
+                        <strong className="text-emerald-400">{rulesCount} rules</strong>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-400">Steward:</span>
@@ -1425,25 +1867,44 @@ export const AdminView: React.FC<AdminViewProps> = ({
                 </p>
               </div>
 
-              {/* Filter / Search inside inspect overlay */}
-              <div className="flex items-center gap-3">
+              {/* Action Buttons & Filter inside inspect overlay */}
+              <div className="flex flex-wrap items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setIsAddOverlayRuleModalOpen(true)}
+                  className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-mono font-bold flex items-center gap-1 transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Rule</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleExportOverlayCSV(inspectOverlayFile)}
+                  className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-mono font-medium flex items-center gap-1 transition-colors"
+                  title="Download this overlay file as CSV"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Export CSV</span>
+                </button>
+
                 <div className="relative">
-                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2" />
                   <input
                     type="text"
                     placeholder="Search rules..."
                     value={overlaySearch}
                     onChange={(e) => setOverlaySearch(e.target.value)}
-                    className="pl-9 pr-3 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs font-mono text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500 w-56"
+                    className="pl-9 pr-3 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs font-mono text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500 w-48"
                   />
                 </div>
 
-                <span className={`px-3 py-1.5 text-xs font-mono font-bold rounded border ${
+                <span className={`px-2.5 py-1.5 text-xs font-mono font-bold rounded border ${
                   activeOverlayFiles[inspectOverlayFile] 
                     ? 'bg-emerald-950 text-emerald-400 border-emerald-800' 
                     : 'bg-slate-800 text-slate-400 border-slate-700'
                 }`}>
-                  {activeOverlayFiles[inspectOverlayFile] ? 'STATUS: ACTIVE IN RUNTIME' : 'STATUS: INACTIVE'}
+                  {activeOverlayFiles[inspectOverlayFile] ? 'ACTIVE IN RUNTIME' : 'INACTIVE'}
                 </span>
               </div>
             </div>
@@ -1951,6 +2412,21 @@ export const AdminView: React.FC<AdminViewProps> = ({
         </div>
       )}
 
+      {/* SECTION 6: IMPORT & AI ENRICHMENT STUDIO */}
+      {activeSection === 'Import & AI Studio' && (
+        <div className="pt-2 animate-fade-in">
+          <ImportEnrichmentStudio
+            existingCanonicalConcepts={canonicalConcepts}
+            existingKnowledgeConcepts={knowledgeList}
+            activeBranch={activeBranch}
+            onCommitCanonical={handleImportCanonicalGlossary}
+            onCommitKnowledge={handleImportKnowledge}
+            onAddAuditRecord={(auditRec) => setAuditLogs(prev => [auditRec, ...prev])}
+            onShowToast={showToast}
+          />
+        </div>
+      )}
+
       {/* 3-WAY MERGE CONFLICT RESOLUTION WIZARD MODAL */}
       {isMergeConflictModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-xs p-4 animate-fade-in font-mono">
@@ -2200,6 +2676,67 @@ export const AdminView: React.FC<AdminViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* Floating Toast Notification */}
+      {toastNotification && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 bg-slate-900 border border-emerald-500/50 rounded-xl shadow-2xl text-xs font-mono text-white animate-in slide-in-from-bottom-4 duration-200">
+          <div className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+            <CheckCircle2 className="w-4 h-4" />
+          </div>
+          <span>{toastNotification.text}</span>
+          <button 
+            onClick={() => setToastNotification(null)}
+            className="p-1 text-slate-400 hover:text-white rounded"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* Modals for Direct Concept Authoring and Batch Ingestion */}
+      <AddCanonicalConceptModal
+        isOpen={isAddConceptModalOpen}
+        onClose={() => setIsAddConceptModalOpen(false)}
+        onAdd={handleAddCanonicalConcept}
+        existingConcepts={canonicalConcepts}
+      />
+
+      <ImportGlossaryModal
+        isOpen={isImportGlossaryModalOpen}
+        onClose={() => setIsImportGlossaryModalOpen(false)}
+        onImport={handleImportCanonicalGlossary}
+        existingConcepts={canonicalConcepts}
+      />
+
+      <AddOverlayRuleModal
+        isOpen={isAddOverlayRuleModalOpen}
+        onClose={() => setIsAddOverlayRuleModalOpen(false)}
+        overlayFiles={overlayFilesList.map(f => ({ file: f.file, title: f.title }))}
+        defaultOverlayFile={inspectOverlayFile}
+        canonicalConcepts={canonicalConcepts}
+        onAddRule={handleAddOverlayRule}
+      />
+
+      <ImportOverlayModal
+        isOpen={isImportOverlayModalOpen}
+        onClose={() => setIsImportOverlayModalOpen(false)}
+        onImportOverlay={handleImportOverlay}
+      />
+
+      <AddKnowledgeConceptModal
+        isOpen={isAddKnowledgeModalOpen}
+        onClose={() => setIsAddKnowledgeModalOpen(false)}
+        onAdd={handleAddKnowledgeConcept}
+        existingKnowledge={knowledgeList}
+        canonicalConcepts={canonicalConcepts}
+      />
+
+      <ImportKnowledgeModal
+        isOpen={isImportKnowledgeModalOpen}
+        onClose={() => setIsImportKnowledgeModalOpen(false)}
+        onImport={handleImportKnowledge}
+        existingKnowledge={knowledgeList}
+      />
 
     </div>
   );

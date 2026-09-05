@@ -57,6 +57,7 @@ Bounded prompts now share a common backend envelope with explicit `SYSTEM`, `TAS
 
 Semantra currently consists of:
 
+- a modern React + TypeScript + Tailwind CSS single-page application workbench in `src/` providing an analyst studio with 6-step Workspace pipeline, Reverse Engineering engine, Architecture Studios, Catalog, Benchmarks, and Governance
 - a FastAPI backend in `backend/app`
 - a Streamlit product UI in `streamlit_app.py` and `streamlit_ui/*`
 - a SQLite persistence layer in `backend/semantra.sqlite3`
@@ -65,11 +66,12 @@ Semantra currently consists of:
 
 The main top-level UI areas are:
 
-- `Workspace`
-- `Governance` (including `Canonical Console`)
+- `Workspace` (Mode 1: Standard Tabular & Schemas; Mode 2: Contract Reverse Engineering)
+- `Architecture Studios` (HITL Execution Console, Schema Drift, Type Coercion, Entity Resolution, Transactional Outbox, Multi-Protocol Translation)
+- `Governance` (including `Canonical Console` & 3-Way Merge)
 - `Catalog`
 - `Benchmarks`
-- `System`
+- `System & AI Settings`
 
 ## Core Functional Areas
 
@@ -347,6 +349,61 @@ Main anchors:
 - `backend/app/services/evaluation_service.py`
 - `backend/app/services/benchmark_explanation_service.py`
 - `streamlit_ui/benchmark_views.py`
+
+### 13. Human-in-the-Loop (HITL) Execution Console (WF-15)
+
+Implemented today:
+
+- 4-stage deterministic execution pipeline:
+  1. *Ingestion & Dry-Run Simulation*: In-memory mapping preview with zero target database mutations.
+  2. *Staging & Exception Engine*: Automated segregation of safe matches (≥ 90%) from isolated exceptions.
+  3. *Human Review & Triage*: Bulk resolution ("Apply to All Similar") and Dead-Letter Queue (DLQ / Quarantine) isolation.
+  4. *Verified Commit & Sign-off*: Atomic commit to target databases, SHA-256 cryptographic seal, digital sign-off, and audit trail export compliant with SOC2, ISO 27001, and EU AI Act (Article 14).
+
+Main anchors:
+
+- `src/components/HumanInTheLoopExecutionConsole.tsx`
+- `src/components/WorkspaceOutput.tsx`
+
+### 14. Contract Reverse Engineering (Mode 2)
+
+Implemented today:
+
+- 7-step automated contract extraction pipeline from raw enterprise JSON/XML payloads into canonical definitions:
+  1. *Payload Ingestion* -> 2. *Structural Flattening* -> 3. *Type & Semantic Inferencing* -> 4. *Canonical Concept Alignment* -> 5. *Transformation Heuristics* -> 6. *ODCS v3.0.1 Contract Generation* -> 7. *Handoff to Mode 1 Workspace*.
+
+Main anchors:
+
+- `src/components/ContractReverseEngineeringView.tsx`
+
+### 15. Enterprise Architecture Studios (P0–P2 Labs)
+
+Implemented today:
+
+- **Schema Drift Studio**: Dynamic JSONB overflow columns and Dead-Letter Queue (DLQ) routing.
+- **Type Coercion Studio**: Strict ISO 8601 formatting, European vs. US decimal casting, and integer overflow checks.
+- **Entity Resolution Studio**: Cross-system customer deduplication with fuzzy matching algorithms and golden record synthesis.
+- **Transactional Outbox Studio**: Outbox table transaction staging, simulated Debezium CDC polling, and Kafka topic dispatching.
+- **Multi-Protocol Translation Studio**: Real-time translation between GraphQL AST queries and gRPC FieldMask specifications.
+
+Main anchors:
+
+- `src/components/SchemaDriftStudio.tsx`
+- `src/components/JsonSchemaCoercionStudio.tsx`
+- `src/components/EntityResolutionStudio.tsx`
+- `src/components/TransactionalOutboxStudio.tsx`
+- `src/components/MultiProtocolTranslationStudio.tsx`
+
+### 16. Business Analyst (BA) Report & Executive Synthesis
+
+Implemented today:
+
+- Executive-ready documentation generator as Workspace Step 5.
+- Traceability matrices, data validation rules, compliance summaries, and exportable documentation with bounded AI synthesis.
+
+Main anchors:
+
+- `src/components/WorkspaceBAReport.tsx`
 
 ## Governance Model Today
 

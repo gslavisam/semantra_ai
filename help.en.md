@@ -74,7 +74,30 @@ A structured 7-step engine that transforms unstructured raw payloads into formal
 
 ---
 
-## 🔒 4. Security, Privacy & Bounded AI Principles
+## 🛡️ 4. Human-in-the-Loop (HITL) Execution Console (WF-15)
+
+The **HITL Execution Console** provides a deterministic operational air-gap between automated mapping engines and customer production databases/ERPs. It eliminates unverified mutations by enforcing human review only on isolated edge cases.
+
+### 4-Stage Execution Flow
+1. **Ingestion & Dry-Run Simulation**: Ingests production batches (e.g. 1,500+ records) and performs in-memory transformation simulations with **zero target database mutations**.
+2. **Staging & Exception Engine**: Automatically identifies safe mappings (≥ 90% confidence) and isolates warnings, unknown aliases, and schema violations.
+3. **Human Review & Resolution**:
+   - **Triage Focus**: Presents exclusively records requiring human attention.
+   - **Bulk Resolve ("Apply to All Similar")**: Authorizing a new alias (e.g., `supplier_vat_id` → `tax_identification_number`) applies resolution instantly to all identical instances across the batch.
+   - **Dead-Letter Queue (DLQ / Quarantine)**: Hard blockers (e.g., calendar formatting errors or negative revenues) can be edited inline or sent to quarantine, **unblocking execution of the remaining clean records**.
+4. **Verified Commit & Audit Sign-off**:
+   - Atomically commits verified records into target canonical stores.
+   - Generates an immutable SHA-256 batch hash and records Data Steward sign-off (name, governance role, rationale).
+   - Exports comprehensive compliance audit trails in `.JSON` conforming to **SOC2, ISO 27001, and EU AI Act (Article 14 - Human Oversight)** requirements.
+
+### Where to Access
+- **Workspace Pipeline Step 6**: Accessible directly after Step 5 (BA Report) as `6. HITL Execution`.
+- **Durable Output Quick Action**: Click `[ ⚡ HITL Batch Execution ]` in the `WorkspaceOutput` header toolbar.
+- **Sidebar Architecture Studios**: Select `HITL Execution Console` under the Architecture Studios menu.
+
+---
+
+## 🔒 5. Security, Privacy & Bounded AI Principles
 
 - **Bounded AI Architecture**: Generative AI (Google Gemini 2.5) functions strictly in an advisory capacity (explanations, optimization tips, summary briefings). All core mapping scoring and transformation logic remain 100% deterministic and under analyst control.
 - **Client-Side PII Redaction**: Sensitive personal identification data (names, social security numbers, credit card numbers, auth tokens) are automatically detected and masked before any diagnostic payload is sent to AI endpoints.

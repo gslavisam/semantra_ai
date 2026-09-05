@@ -38,7 +38,21 @@
 - **Scoring Profile Evaluation**: Evaluates mapping accuracy against benchmark datasets across Strict, Balanced, and Semantic-heavy scoring profiles.
 - **Correction Impact Analysis**: Measures how analyst corrections and manual overrides improve downstream accuracy.
 
-### 6. System Health, Observability & Circuit Breakers
+### 6. Human-in-the-Loop (HITL) Execution Console & Safety Gate (WF-15)
+- **4-Stage Execution Pipeline**:
+  1. *Ingest & Dry-Run Simulation*: Simulates transformations in-memory with **zero target database mutations**.
+  2. *Staging & Exception Engine*: Auto-approves safe matches (≥ 90% confidence) while isolating unknown aliases, format ambiguities, and schema type violations.
+  3. *Human Review & Triage*:
+     - **"Apply to All Similar"**: Resolves repeated aliases (e.g. `supplier_vat_id` → `tax_identification_number`) across the entire batch with one click.
+     - **Dead-Letter Queue (DLQ / Quarantine)**: Quarantines unfixable records or enables inline value fixes, **unblocking the execution of remaining clean records**.
+  4. *Verified Commit & Sign-off*: Atomically commits clean records, applies a SHA-256 cryptographic batch seal, records Data Steward credentials (Name, Role, Rationale), and exports audit trails compliant with **SOC2, ISO 27001, and EU AI Act (Article 14 - Human Oversight)**.
+
+### 7. Modern Architecture Studios & Data Mesh Tools
+- **Data Contracts (ODC) & GitOps CI/CD**: Authors Open Data Contract Standard (ODCS v3.0.1) contracts, runs automated linter & breaking-change detection, and triggers GitOps PR creation.
+- **Import & AI Enrichment Studio**: Grid-based schema ingestion, AI-assisted description & semantic tag generation, and bulk type inferencing.
+- **Zero-Trust Security Triad**: End-to-end mTLS certificates, Attribute-Based Access Control (ABAC), and simulated Cloud HSM key management.
+
+### 8. System Health, Observability & Circuit Breakers
 - **Live Circuit Breaker**: Real-time monitoring and controls for server-side Gemini AI calls.
 - **Security & Privacy Controls**: Built-in PII masking heuristics with field-level redaction for sensitive enterprise data.
 
@@ -59,7 +73,7 @@
 ┌────────────────────────────▼─────────────────────────────┐
 │                 Express Server (Node.js)                 │
 │  - Entry Point: server.ts (Port 3000)                    │
-│  - Secure Server-Side Google Gemini 2.5 API Integration  │
+│  - Secure Server-Side Google Gemini 3.8 API Integration  │
 │  - Health, Telemetry & Circuit Breaker API Endpoints     │
 │  - Bundled Production CJS via esbuild                    │
 └──────────────────────────────────────────────────────────┘
@@ -67,7 +81,7 @@
 
 - **Frontend**: React 18, Vite, TypeScript, Tailwind CSS, `@google/genai` (server-side proxy), Lucide React, Motion.
 - **Backend / API**: Node.js, Express, esbuild.
-- **Bounded AI**: Google Gemini 2.5 (`gemini-2.5-flash`) for advisory explanations, contract analysis, and refinement suggestions (server-side proxying).
+- **Bounded AI**: Google Gemini 3.8 (`gemini-3.8-flash`) for advisory explanations, contract analysis, and refinement suggestions (server-side proxying). Multi-provider support for OpenAI (GPT-6 Astra), Anthropic (Claude Sonnet 5), Local AI (Ollama & LM Studio), and Custom API gateways.
 
 ---
 
@@ -116,13 +130,17 @@ npm start
 ```
 ├── src/
 │   ├── components/            # React UI components & views
-│   │   ├── Workspace.tsx       # Primary mapping & profiling workbench
+│   │   ├── Workspace.tsx       # Primary mapping & profiling workbench (Pipeline Steps 1-6)
+│   │   ├── HumanInTheLoopExecutionConsole.tsx # 4-Stage HITL Dry-Run & Verified Commit Engine
 │   │   ├── ReverseEngineeringView.tsx # 7-Step contract reverse engineering engine
 │   │   ├── CanonicalConsole.tsx# Canonical glossary & 3-Way Merge wizard
+│   │   ├── DataContractGitOpsStudio.tsx # ODCS Data Contracts & GitOps CI/CD
+│   │   ├── ImportEnrichmentStudio.tsx   # Schema grid ingestion & AI semantic enrichment
+│   │   ├── MtlsHsmSecurityStudio.tsx    # mTLS + ABAC + HSM Zero-Trust security triad
 │   │   ├── CatalogView.tsx     # Integration catalog & asset reuse
 │   │   ├── BenchmarkView.tsx   # Scoring benchmarks & correction metrics
 │   │   ├── SystemConfigView.tsx# Observability, config & circuit breaker
-│   │   ├── HelpModal.tsx       # In-app interactive documentation console
+│   │   ├── HelpModal.tsx       # In-app interactive documentation console (14 sections)
 │   │   └── ...
 │   ├── types.ts               # Core TypeScript interfaces & schemas
 │   ├── main.tsx               # Client entry point
@@ -142,8 +160,9 @@ npm start
 
 1. **Deterministic-First**: Mapping scores, heuristics, and data transformations are fully transparent, repeatable, and inspectable.
 2. **Bounded AI**: Generative AI operates strictly as an advisory accelerator with explicit analyst approval gates.
-3. **Enterprise Privacy**: Sensitive fields (PII, tokens) are automatically flagged and masked before AI inspection.
-4. **Governed Lifecycle**: Canonical schema changes require explicit branch merges and audit logging.
+3. **Zero Unintended Mutations (HITL Air-Gap)**: No production database mutations occur without human verification and cryptographic sign-off on isolated exceptions.
+4. **Enterprise Privacy**: Sensitive fields (PII, tokens) are automatically flagged and masked before AI inspection.
+5. **Governed Lifecycle**: Canonical schema changes require explicit branch merges and audit logging.
 
 ---
 
